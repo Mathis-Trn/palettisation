@@ -1,0 +1,560 @@
+{
+  "contractVersion": "1.0",
+  "orderId": "SO265669-X82921",
+  "engineVersion": "1.0.0",
+  "durationMs": 35.41450000011537,
+  "warnings": [],
+  "totalCartonsCount": 20,
+  "placedCartonsCount": 20,
+  "unplacedCartonsCount": 0,
+  "palletsCount": 1,
+  "globalVolumeUsageRatio": 0.02510460251046025,
+  "totalWeightKg": 17.6,
+  "pallets": [
+    {
+      "index": 0,
+      "config": {
+        "code": "P:80x120x110",
+        "lengthMm": 800.0,
+        "widthMm": 1200.0,
+        "maxHeightMm": 1100.0,
+        "emptyPalletHeightMm": 144.0,
+        "maxHeightIncludesPallet": true,
+        "maxWeightKg": 1000.0,
+        "overhangMm": 0.0,
+        "safetyGapMm": 0.0,
+        "minimumSupportRatio": 0.8
+      },
+      "totalWeightKg": 17.6,
+      "usableVolumeMm3": 917760000.0,
+      "volumeUsedMm3": 23040000.0,
+      "volumeUsageRatio": 0.02510460251046025,
+      "footprintUsageRatio": 0.3,
+      "maxHeightUsedMm": 80.0,
+      "placedCartons": [
+        {
+          "instanceId": "HANDSCRUB1__00001",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": 30.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00002",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 80.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": 11.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00003",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 180.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": 11.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00004",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 160.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": 7.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00005",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 240.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": 3.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00006",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 80.0,
+            "width": 180.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 180.0,
+            "y": 80.0,
+            "z": 0.0
+          },
+          "orientation": "LHW",
+          "palletIndex": 0,
+          "placementScore": 2.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00007",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 320.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -1.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00008",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 360.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -3.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00009",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 400.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -5.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00010",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 480.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -9.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00011",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 540.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -12.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00012",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 260.0,
+            "y": 80.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -12.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00013",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 80.0,
+            "width": 180.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 180.0,
+            "y": 260.0,
+            "z": 0.0
+          },
+          "orientation": "LHW",
+          "palletIndex": 0,
+          "placementScore": -12.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00014",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 560.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -13.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00015",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 80.0,
+            "width": 180.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 260.0,
+            "y": 160.0,
+            "z": 0.0
+          },
+          "orientation": "LHW",
+          "palletIndex": 0,
+          "placementScore": -16.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00016",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 0.0,
+            "y": 640.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -17.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00017",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 80.0,
+            "width": 180.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 720.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "orientation": "LHW",
+          "palletIndex": 0,
+          "placementScore": -21.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00018",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 440.0,
+            "y": 80.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -21.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00019",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 180.0,
+            "width": 80.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 340.0,
+            "y": 160.0,
+            "z": 0.0
+          },
+          "orientation": "HLW",
+          "palletIndex": 0,
+          "placementScore": -20.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        },
+        {
+          "instanceId": "HANDSCRUB1__00020",
+          "sku": "HANDSCRUB1",
+          "originalDimensionsMm": {
+            "length": 80.0,
+            "width": 80.0,
+            "height": 180.0
+          },
+          "placedDimensionsMm": {
+            "length": 80.0,
+            "width": 180.0,
+            "height": 80.0
+          },
+          "positionMm": {
+            "x": 180.0,
+            "y": 440.0,
+            "z": 0.0
+          },
+          "orientation": "LHW",
+          "palletIndex": 0,
+          "placementScore": -21.0,
+          "weightKg": 0.88,
+          "fragile": false,
+          "stackable": true,
+          "productGroup": null
+        }
+      ]
+    }
+  ],
+  "unplacedCartons": [],
+  "legacyExpectedResult": null
+}

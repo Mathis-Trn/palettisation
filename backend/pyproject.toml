@@ -1,0 +1,63 @@
+[project]
+name = "palletizer"
+version = "1.0.0"
+description = "Moteur headless de palettisation 3D et de chargement transport (domaine, adaptateur py3dbp, API, CLI)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+    "pydantic>=2.9,<3",
+    "py3dbp==1.1.2",
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.32,<1",
+    "python-multipart>=0.0.12,<1",
+    "typer>=0.13,<1",
+]
+
+[project.scripts]
+palletizer = "palletizer.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<9",
+    "pytest-cov>=6.0,<7",
+    "hypothesis>=6.115,<7",
+    "ruff>=0.7,<1",
+    "mypy>=1.13,<2",
+    "httpx>=0.27,<1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/palletizer"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# FastAPI's dependency-injection idiom (File(...)/Form(...)/Depends(...) as default values) is
+# the documented pattern; ruff's "no function call in default" check is a false positive here.
+"src/palletizer/api/routes.py" = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+exclude = ["tests/fixtures"]
+
+[[tool.mypy.overrides]]
+module = ["py3dbp", "py3dbp.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/palletizer"]
