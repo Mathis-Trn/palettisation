@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  --color-navy-950: #0b1120;
+  --color-navy-900: #0f1b33;
+  --color-navy-800: #16233f;
+  --color-navy-700: #1e2c4d;
+  --color-navy-600: #2a3d68;
+  --color-navy-500: #3a5488;
+
+  --color-slate-50: #f6f7f9;
+  --color-slate-100: #eceff3;
+  --color-slate-200: #dde2e9;
+  --color-slate-300: #c3cbd6;
+  --color-slate-400: #98a3b3;
+  --color-slate-500: #6b7688;
+  --color-slate-600: #4d566a;
+
+  --color-orange-500: #f2823a;
+  --color-orange-600: #db6a22;
+  --color-turquoise-500: #17a6a0;
+  --color-turquoise-600: #128581;
+
+  --color-danger-500: #d64545;
+  --color-danger-50: #fdecec;
+  --color-warning-500: #d99a1f;
+  --color-warning-50: #fdf5e4;
+  --color-success-500: #1f9d63;
+  --color-success-50: #e8f7f0;
+
+  --background: var(--color-slate-50);
+  --foreground: var(--color-navy-950);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-navy-950: var(--color-navy-950);
+  --color-navy-900: var(--color-navy-900);
+  --color-navy-800: var(--color-navy-800);
+  --color-navy-700: var(--color-navy-700);
+  --color-navy-600: var(--color-navy-600);
+  --color-navy-500: var(--color-navy-500);
+
+  --color-slate-50: var(--color-slate-50);
+  --color-slate-100: var(--color-slate-100);
+  --color-slate-200: var(--color-slate-200);
+  --color-slate-300: var(--color-slate-300);
+  --color-slate-400: var(--color-slate-400);
+  --color-slate-500: var(--color-slate-500);
+  --color-slate-600: var(--color-slate-600);
+
+  --color-orange-500: var(--color-orange-500);
+  --color-orange-600: var(--color-orange-600);
+  --color-turquoise-500: var(--color-turquoise-500);
+  --color-turquoise-600: var(--color-turquoise-600);
+
+  --color-danger-500: var(--color-danger-500);
+  --color-danger-50: var(--color-danger-50);
+  --color-warning-500: var(--color-warning-500);
+  --color-warning-50: var(--color-warning-50);
+  --color-success-500: var(--color-success-500);
+  --color-success-50: var(--color-success-50);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "palettisation3d",
+      "runtimeExecutable": "C:\\Users\\mathi\\AppData\\Roaming\\nvm\\v22.9.0\\node.exe",
+      "runtimeArgs": ["node_modules\\next\\dist\\bin\\next", "dev"],
+      "port": 3000
+    }
+  ]
+}

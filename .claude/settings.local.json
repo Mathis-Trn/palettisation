@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(where node *)",
+      "Bash(where nvm *)",
+      "Read(//c/Users/mathi/AppData/Roaming/nvm/v16.17.1/**)",
+      "Bash(nvm list *)",
+      "Bash(nvm use *)",
+      "Bash(\"C:\\\\Users\\\\mathi\\\\AppData\\\\Roaming\\\\nvm\\\\v22.9.0\\\\node.exe\" -v)",
+      "PowerShell(nvm use 22.9.0)",
+      "PowerShell(node -v)",
+      "PowerShell(nvm use 22.9.0 2>&1 | Out-String; Write-Output \"EXIT: $LASTEXITCODE\")",
+      "PowerShell(nvm current)",
+      "PowerShell(nvm list)",
+      "PowerShell(& \"C:\\\\Users\\\\mathi\\\\AppData\\\\Roaming\\\\nvm\\\\nvm.exe\" use 22.9.0)",
+      "Bash(ls \"C:\\\\Users\\\\mathi\\\\AppData\\\\Roaming\\\\nvm\\\\v22.9.0\" | head -20)"
+    ]
+  }
+}
