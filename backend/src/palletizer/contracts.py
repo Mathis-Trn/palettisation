@@ -25,6 +25,7 @@ from palletizer.domain.models import (
     TransportLoadResult,
     VehicleConfig,
 )
+from palletizer.jobs.models import Job, JobError, JobStatus
 
 CONTRACT_VERSION = "1.0"
 
@@ -547,3 +548,43 @@ class CapabilitiesResponse(_StrictModel):
     constraints: tuple[str, ...]
     limits: dict[str, int] = Field(alias="limits")
     packing_adapter: dict[str, str] = Field(alias="packingAdapter")
+
+
+# --- Jobs de palettisation asynchrones (/api/v1/palletization-jobs) ----------------------------
+
+
+class JobErrorContract(_StrictModel):
+    code: str
+    message: str
+
+    @classmethod
+    def from_domain(cls, error: JobError) -> JobErrorContract:
+        return cls(code=error.code, message=error.message)
+
+
+class JobCreatedResponse(_StrictModel):
+    job_id: str = Field(alias="jobId")
+    status: JobStatus
+    created_at: str = Field(alias="createdAt")
+
+
+class JobStatusResponse(_StrictModel):
+    job_id: str = Field(alias="jobId")
+    status: JobStatus
+    created_at: str = Field(alias="createdAt")
+    started_at: str | None = Field(default=None, alias="startedAt")
+    finished_at: str | None = Field(default=None, alias="finishedAt")
+    result: PalletizeResponse | None = None
+    error: JobErrorContract | None = None
+
+    @classmethod
+    def from_domain(cls, job: Job) -> JobStatusResponse:
+        return cls(
+            jobId=job.job_id,
+            status=job.status,
+            createdAt=job.created_at.isoformat(),
+            startedAt=job.started_at.isoformat() if job.started_at else None,
+            finishedAt=job.finished_at.isoformat() if job.finished_at else None,
+            result=PalletizeResponse.from_domain(job.result) if job.result is not None else None,
+            error=JobErrorContract.from_domain(job.error) if job.error is not None else None,
+        )

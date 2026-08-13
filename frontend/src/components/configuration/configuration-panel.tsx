@@ -131,10 +131,13 @@ export function ConfigurationPanel({ simulation }: { simulation: Simulation }) {
               value={palletConfig.emptyPalletHeightMm}
               onChange={(v) => patchPallet({ emptyPalletHeightMm: v })}
             />
-            <div className="flex items-end justify-between rounded-md border border-slate-200 px-3 py-2">
+            <label className="flex items-center justify-between gap-3 px-3 py-2">
               <span className="text-xs text-slate-600">La hauteur max. inclut la palette</span>
-              <Switch checked={palletConfig.maxHeightIncludesPallet} onCheckedChange={(v) => patchPallet({ maxHeightIncludesPallet: v })} />
-            </div>
+              <Switch
+                checked={palletConfig.maxHeightIncludesPallet}
+                onCheckedChange={(v) => patchPallet({ maxHeightIncludesPallet: v })}
+              />
+            </label>
           </div>
 
           {oversizedCartons.length > 0 && (

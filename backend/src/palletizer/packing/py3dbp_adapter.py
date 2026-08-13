@@ -46,6 +46,8 @@ n'utilise pas `Packer.pack()` tel quel, mais un placement point-par-point qui n'
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 from py3dbp import Item as Py3dbpItem
 from py3dbp.constants import RotationType
 
@@ -85,13 +87,11 @@ def _make_probe_item(dims: Dimensions3D) -> Py3dbpItem:
     )
 
 
-def oriented_dimensions(dims: Dimensions3D, orientation: OrientationCode) -> Dimensions3D:
-    """Dimensions occupées (en mm, axes du domaine) après application d'une orientation.
-
-    Délègue le calcul de permutation à `py3dbp.Item.get_dimension()` (c'est la seule
-    responsabilité de py3dbp utilisée ici : aucun objet py3dbp n'est retourné).
-    """
-    item = _make_probe_item(dims)
+@lru_cache(maxsize=200_000)
+def _oriented_dimensions_cached(
+    length_mm: float, width_mm: float, height_mm: float, orientation: OrientationCode
+) -> Dimensions3D:
+    item = _make_probe_item(Dimensions3D(length_mm, width_mm, height_mm))
     item.rotation_type = ORIENTATION_TO_ROTATION_TYPE[orientation]
     py_w, py_h, py_d = item.get_dimension()
     # py_w/py_h/py_d sont dans le référentiel py3dbp (axe0=largeur py3dbp, axe1=hauteur py3dbp,
@@ -99,3 +99,19 @@ def oriented_dimensions(dims: Dimensions3D, orientation: OrientationCode) -> Dim
     # axe0(py3dbp width) -> x du domaine (length), axe1(py3dbp height) -> z du domaine (height),
     # axe2(py3dbp depth) -> y du domaine (width).
     return Dimensions3D(length_mm=float(py_w), width_mm=float(py_d), height_mm=float(py_h))
+
+
+def oriented_dimensions(dims: Dimensions3D, orientation: OrientationCode) -> Dimensions3D:
+    """Dimensions occupées (en mm, axes du domaine) après application d'une orientation.
+
+    Délègue le calcul de permutation à `py3dbp.Item.get_dimension()` (c'est la seule
+    responsabilité de py3dbp utilisée ici : aucun objet py3dbp n'est retourné).
+
+    Mémoïsée (`functools.lru_cache`) : cette fonction est pure et déterministe, et un ordre réel
+    ne comporte souvent qu'une poignée de dimensions distinctes répétées sur des milliers
+    d'instances (une par référence produit) — recalculer la permutation et reconstruire un objet
+    py3dbp à chaque appel est un coût O(instances × points × orientations) totalement évitable.
+    Le cache est borné (200 000 entrées ~ quelques Mo) pour ne pas croître sans limite dans un
+    processus serveur de longue durée traitant de nombreuses commandes différentes.
+    """
+    return _oriented_dimensions_cached(dims.length_mm, dims.width_mm, dims.height_mm, orientation)

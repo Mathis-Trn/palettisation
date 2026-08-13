@@ -9,6 +9,8 @@ import type {
   CapabilitiesResponseContract,
   ErrorResponseContract,
   HealthResponseContract,
+  JobCreatedResponseContract,
+  JobStatusResponseContract,
   PalletizeRequestContract,
   PalletizeResponseContract,
   ParseCsvResponseContract,
@@ -26,7 +28,11 @@ import {
   vehicleToContract,
 } from "./to-domain";
 
-const DEFAULT_TIMEOUT_MS = 30_000;
+// Timeout réseau court, pour les petites requêtes de création/consultation de job (jamais pour le
+// calcul lui-même, qui s'exécute de façon asynchrone côté serveur — voir `createPalletizationJob`
+// / `getPalletizationJob` ci-dessous et `usePalletizationJob`). Piloté par
+// `NEXT_PUBLIC_API_REQUEST_TIMEOUT_MS` (15s par défaut).
+const DEFAULT_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_REQUEST_TIMEOUT_MS) || 15_000;
 
 export class ApiError extends Error {
   constructor(
@@ -172,6 +178,40 @@ export async function palletizeCsv(
     body: formData,
   });
   return contractToOptimizationResult(response);
+}
+
+/** Démarre un calcul asynchrone : répond immédiatement (202), le résultat est récupéré plus tard
+ * par `getPalletizationJob` (voir `usePalletizationJob`). Remplace l'ancien appel synchrone
+ * `palletize()` pour le parcours normal de l'interface (le calcul peut durer plusieurs minutes,
+ * jamais tenu dans une seule requête HTTP). */
+export async function createPalletizationJob(
+  simulation: Simulation
+): Promise<JobCreatedResponseContract> {
+  const request_ = buildPalletizeRequest(
+    simulation.id,
+    transportModeToShippingMode(simulation.settings.transportMode),
+    simulation.cartonLines,
+    simulation
+  );
+  return request<JobCreatedResponseContract>("/api/v1/palletization-jobs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request_),
+  });
+}
+
+export async function getPalletizationJob(jobId: string): Promise<JobStatusResponseContract> {
+  return request<JobStatusResponseContract>(
+    `/api/v1/palletization-jobs/${encodeURIComponent(jobId)}`,
+    { method: "GET" }
+  );
+}
+
+export async function cancelPalletizationJob(jobId: string): Promise<JobStatusResponseContract> {
+  return request<JobStatusResponseContract>(
+    `/api/v1/palletization-jobs/${encodeURIComponent(jobId)}`,
+    { method: "DELETE" }
+  );
 }
 
 export async function computeTransportLoad(

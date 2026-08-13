@@ -5,8 +5,12 @@ Utilisable comme simple bibliothèque Python (voir `backend/README.md`), sans Fa
 
 from __future__ import annotations
 
+import logging
+import os
+import sys
 import time
 from collections.abc import Sequence
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from palletizer.domain.enums import (
@@ -32,13 +36,46 @@ from palletizer.domain.models import (
     UnplacedCarton,
     VehicleConfig,
 )
-from palletizer.packing.adapter import WorkingPallet, pack_with_strategy
+from palletizer.packing.adapter import (
+    PARALLEL_BATCH_THRESHOLD,
+    WorkingPallet,
+    pack_with_strategy,
+    pack_with_strategy_parallel,
+)
 from palletizer.packing.metrics import build_pallet_result, usable_volume_mm3
 from palletizer.packing.transport_packer import compute_transport_load
 from palletizer.packing.validation import validate_optimization_result
 
 ENGINE_VERSION = "1.0.0"
-PRACTICAL_INSTANCE_LIMIT = 500
+
+_performance_logger = logging.getLogger("palletizer.performance")
+
+
+def _packing_worker_count() -> int:
+    """Nombre de processus utilisés par `pack_with_strategy_parallel` pour les commandes dépassant
+    `PARALLEL_BATCH_THRESHOLD` (voir sa docstring dans `packing/adapter.py`). Configurable via
+    `PALLETIZATION_PACKING_WORKERS` (par défaut : tous les cœurs disponibles) ; `1` désactive
+    explicitement le parallélisme et revient au comportement séquentiel historique."""
+    raw = os.environ.get("PALLETIZATION_PACKING_WORKERS")
+    if raw:
+        return max(1, int(raw))
+    return os.cpu_count() or 1
+
+
+def _peak_memory_kb() -> int | None:
+    """Mémoire résidente maximale approximative du processus, en Ko — indisponible sur Windows
+    (le module stdlib `resource` est Unix uniquement) ; disponible en production (image Docker
+    Linux). Retourne `None` plutôt que de deviner une valeur.
+
+    Le test `sys.platform` (plutôt qu'un `try/import`) est le motif recommandé par mypy/typeshed
+    pour du code conditionnel par plateforme : le corps devient statiquement injoignable — donc
+    non vérifié — sur la plateforme où mypy s'exécute, sans faux positif ``[attr-defined]``.
+    """
+    if sys.platform == "win32":
+        return None
+    import resource
+
+    return int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 
 
 def _sanitize_sku(sku: str) -> str:
@@ -155,13 +192,12 @@ class PalletizationService:
         legacy_expected_result: LegacyExpectedResult | None = None,
     ) -> OptimizationResult:
         start = time.perf_counter()
+
+        expand_start = time.perf_counter()
         instances, invalid_lines = expand_order_lines(order.lines)
+        expand_duration_ms = (time.perf_counter() - expand_start) * 1000
+
         warnings: list[str] = []
-        if len(instances) > PRACTICAL_INSTANCE_LIMIT:
-            warnings.append(
-                f"Plus de {PRACTICAL_INSTANCE_LIMIT} instances ({len(instances)}) à placer : le "
-                "mode rapide est recommandé, le calcul peut être lent en mode approfondi."
-            )
 
         strategies = (
             QUICK_STRATEGIES
@@ -169,19 +205,32 @@ class PalletizationService:
             else THOROUGH_STRATEGIES
         )
 
+        # Au-delà de `PARALLEL_BATCH_THRESHOLD` instances, répartit le calcul sur plusieurs
+        # processus (voir `pack_with_strategy_parallel` pour le compromis compacité/vitesse assumé
+        # et la passe de consolidation). En-dessous, comportement séquentiel historique inchangé.
+        use_parallel = len(instances) >= PARALLEL_BATCH_THRESHOLD
+        worker_count = _packing_worker_count()
+
+        packing_start = time.perf_counter()
         best_pallets: list[WorkingPallet] | None = None
         best_unplaced: list[UnplacedCarton] = []
         best_rank: tuple[int, int, float, float, str] | None = None
         for strategy in strategies:
             ordered = sort_instances(instances, strategy)
-            pallets, unplaced = pack_with_strategy(ordered, pallet_spec, options)
+            if use_parallel:
+                pallets, unplaced = pack_with_strategy_parallel(
+                    ordered, pallet_spec, options, worker_count
+                )
+            else:
+                pallets, unplaced = pack_with_strategy(ordered, pallet_spec, options)
             rank = _strategy_rank(pallets, pallet_spec, strategy)
             if best_rank is None or rank < best_rank:
                 best_rank = rank
                 best_pallets = pallets
                 best_unplaced = unplaced
-
         assert best_pallets is not None  # au moins une stratégie est toujours essayée
+
+        packing_duration_ms = (time.perf_counter() - packing_start) * 1000
 
         pallet_results = tuple(
             build_pallet_result(index, pallet_spec, pallet.boxes)
@@ -199,6 +248,9 @@ class PalletizationService:
         if all_unplaced:
             warnings.append(f"{len(all_unplaced)} carton(s) n'ont pas pu être placés.")
 
+        # `duration_ms` provisoire : la post-validation (ci-dessous) n'a pas encore été chronométrée
+        # à ce stade, mais `validate_optimization_result` ne lit jamais ce champ, donc l'utiliser
+        # pour valider avant de le corriger juste après ne change rien au résultat métier.
         result = OptimizationResult(
             order_id=order.order_id,
             pallets=pallet_results,
@@ -217,10 +269,40 @@ class PalletizationService:
             legacy_expected_result=legacy_expected_result,
         )
 
+        validation_start = time.perf_counter()
         expected_ids = [instance.instance_id for instance in instances] + [
             unplaced.instance_id for unplaced in invalid_lines
         ]
         issues = validate_optimization_result(result, expected_ids)
+        validation_duration_ms = (time.perf_counter() - validation_start) * 1000
+        total_duration_ms = (time.perf_counter() - start) * 1000
+        # Corrige `duration_ms` pour inclure la post-validation : la valeur précédente (avant ce
+        # correctif) sous-estimait la durée réellement affichée à l'utilisateur ("Durée du calcul"),
+        # puisqu'elle était figée avant que cette étape ne s'exécute.
+        result = replace(result, duration_ms=total_duration_ms)
+
+        # Métriques de performance journalisées sans exposer de données sensibles (aucun contenu
+        # de commande, uniquement des compteurs/durées) — voir section "Ne pas masquer le problème
+        # de performance" : utile pour diagnostiquer les commandes volumineuses (milliers
+        # d'instances) sans changer le résultat métier.
+        _performance_logger.info(
+            "palletize order_id=%s instances=%d invalid_lines=%d strategies=%d "
+            "expand_ms=%.1f packing_ms=%.1f validation_ms=%.1f total_ms=%.1f "
+            "pallets=%d placed=%d unplaced=%d peak_rss_kb=%s",
+            order.order_id,
+            len(instances),
+            len(invalid_lines),
+            len(strategies),
+            expand_duration_ms,
+            packing_duration_ms,
+            validation_duration_ms,
+            total_duration_ms,
+            len(pallet_results),
+            placed_count,
+            len(all_unplaced),
+            _peak_memory_kb(),
+        )
+
         if issues:
             raise SolutionValidationError(
                 "Post-validation indépendante a rejeté la solution : " + "; ".join(issues)

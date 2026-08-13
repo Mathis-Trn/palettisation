@@ -3,9 +3,12 @@ dans `palletizer.application.services` et `palletizer.imports.legacy_csv`."""
 
 from __future__ import annotations
 
+import hashlib
+import os
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, Header, HTTPException, Response, UploadFile
 
 from palletizer import __version__
 from palletizer.application.services import (
@@ -16,6 +19,8 @@ from palletizer.application.services import (
 from palletizer.contracts import (
     CapabilitiesResponse,
     HealthResponse,
+    JobCreatedResponse,
+    JobStatusResponse,
     PalletizeRequest,
     PalletizeResponse,
     ParseCsvResponse,
@@ -26,6 +31,11 @@ from palletizer.domain.enums import OptimizationLevel
 from palletizer.domain.errors import CsvLimitExceededError
 from palletizer.domain.models import OptimizationOptions, Order
 from palletizer.imports.legacy_csv import MAX_CSV_BYTES, MAX_CSV_ROWS, parse_legacy_csv
+from palletizer.jobs import config as jobs_config
+from palletizer.jobs.manager import JobManager
+from palletizer.jobs.models import JobStatus
+from palletizer.jobs.runner import run_optimize_job
+from palletizer.jobs.store import InMemoryJobStore
 
 router = APIRouter()
 _palletization_service = PalletizationService()
@@ -33,6 +43,41 @@ _transport_service = TransportLoadingService()
 
 PACKING_ADAPTER_NAME = "py3dbp"
 PACKING_ADAPTER_VERSION = "1.1.2"
+
+# Instancié une seule fois par processus serveur, au chargement du module (donc dans le processus
+# MAIN uniquement — les workers du ProcessPoolExecutor n'importent que `jobs.runner`, jamais ce
+# module, voir la docstring de `jobs/runner.py`). `InMemoryJobStore` ne convient qu'à une seule
+# instance backend (voir `jobs/store.py`) ; remplacer par une implémentation Redis pour un
+# déploiement multi-instance ne change rien ici au-delà du constructeur.
+_job_manager = JobManager(
+    store=InMemoryJobStore(),
+    executor=ProcessPoolExecutor(max_workers=jobs_config.max_concurrent_jobs()),
+    run_fn=run_optimize_job,
+    timeout_seconds=jobs_config.job_timeout_seconds(),
+    retention_seconds=jobs_config.job_retention_seconds(),
+)
+
+
+def _fingerprint_request(request: PalletizeRequest) -> str:
+    """Empreinte déterministe d'une requête normalisée, utilisée pour détecter et fusionner des
+    soumissions concurrentes strictement identiques plutôt que de lancer deux fois le même calcul.
+    """
+    canonical = request.model_dump_json(by_alias=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _test_delay_seconds(header_value: str | None) -> float:
+    """Point d'extension **réservé aux tests E2E** (scénario « le calcul dure plus de 30
+    secondes », voir `frontend/tests/e2e`) : totalement inerte tant que le serveur n'a pas été
+    démarré avec `PALLETIZER_ENABLE_TEST_HOOKS=1` (jamais activé en production ni dans
+    `docker-compose.yml`), même si un client envoie l'en-tête. Cela garantit qu'aucune requête
+    externe ne peut artificiellement ralentir un déploiement réel."""
+    if os.environ.get("PALLETIZER_ENABLE_TEST_HOOKS") != "1" or not header_value:
+        return 0.0
+    try:
+        return max(0.0, float(header_value))
+    except ValueError:
+        return 0.0
 
 
 @router.get("/health")
@@ -143,3 +188,47 @@ def transport_load(request: TransportLoadRequest) -> TransportLoadResponse:
     vehicle = request.vehicle.to_domain()
     result = _transport_service.compute(pallets, vehicle)
     return TransportLoadResponse.from_domain(result)
+
+
+@router.post("/api/v1/palletization-jobs", status_code=202)
+def create_palletization_job(
+    request: PalletizeRequest,
+    response: Response,
+    x_test_delay_seconds: str | None = Header(
+        default=None, alias="X-Palletizer-Test-Delay-Seconds"
+    ),
+) -> JobCreatedResponse:
+    """Démarre un calcul hors du cycle de requête HTTP (voir `jobs/manager.py`) : ce calcul étant
+    CPU-bound et pouvant durer jusqu'à `PALLETIZATION_JOB_TIMEOUT_SECONDS`, il ne s'exécute jamais
+    dans la boucle asyncio de FastAPI ni dans le cycle de vie de cette requête, qui répond
+    immédiatement avec le statut initial du job."""
+    order = request.order.to_domain()
+    pallet_spec = request.pallet.to_domain(request.options.minimum_support_ratio)
+    options = request.options.to_domain()
+    fingerprint = _fingerprint_request(request)
+    delay = _test_delay_seconds(x_test_delay_seconds)
+
+    job = _job_manager.submit(order, pallet_spec, options, None, fingerprint, delay)
+    if job.status != JobStatus.QUEUED:
+        # Un job actif identique existait déjà : on renvoie son état réel (pas nécessairement
+        # "queued") plutôt que de mentir sur le statut de création.
+        response.status_code = 200
+    return JobCreatedResponse(
+        jobId=job.job_id, status=job.status, createdAt=job.created_at.isoformat()
+    )
+
+
+@router.get("/api/v1/palletization-jobs/{job_id}")
+def get_palletization_job(job_id: str) -> JobStatusResponse:
+    job = _job_manager.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id!r} introuvable.")
+    return JobStatusResponse.from_domain(job)
+
+
+@router.delete("/api/v1/palletization-jobs/{job_id}")
+def cancel_palletization_job(job_id: str) -> JobStatusResponse:
+    job = _job_manager.cancel(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id!r} introuvable.")
+    return JobStatusResponse.from_domain(job)

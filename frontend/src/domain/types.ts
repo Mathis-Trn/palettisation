@@ -243,6 +243,15 @@ export type Simulation = {
   settings: SimulationSettings;
   cartonLines: CartonLineRow[];
   lastResult?: OptimizationResult;
+  /**
+   * Identifiant du job de calcul asynchrone en cours pour cette simulation, le cas échéant.
+   * Persisté avec la simulation pour permettre de reprendre le suivi (polling) après un
+   * rafraîchissement de page sans relancer le calcul — voir `usePalletizationJob`.
+   */
+  activeJobId?: string;
+  /** Horodatage (ISO, renvoyé par le serveur à la création du job) utilisé pour calculer le temps
+   * écoulé affiché par `OptimizationLoader`, y compris après un rafraîchissement de page. */
+  activeJobCreatedAtIso?: string;
   /** Version du schéma de stockage, pour permettre des migrations futures. */
   storageVersion: number;
 };

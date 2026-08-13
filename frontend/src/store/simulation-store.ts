@@ -49,6 +49,8 @@ type SimulationStoreState = {
   duplicateCartonLine: (id: string, lineId: string) => void;
 
   setResult: (id: string, result: OptimizationResult | undefined) => void;
+  setActiveJob: (id: string, jobId: string, createdAtIso: string) => void;
+  clearActiveJob: (id: string) => void;
   getSimulation: (id: string) => Simulation | undefined;
 };
 
@@ -152,6 +154,22 @@ export const useSimulationStore = create<SimulationStoreState>()(
       setResult: (id, result) => {
         set((state) => ({
           simulations: state.simulations.map((s) => (s.id === id ? { ...s, lastResult: result, updatedAtIso: nowIso() } : s)),
+        }));
+      },
+
+      setActiveJob: (id, jobId, createdAtIso) => {
+        set((state) => ({
+          simulations: state.simulations.map((s) =>
+            s.id === id ? { ...s, activeJobId: jobId, activeJobCreatedAtIso: createdAtIso } : s
+          ),
+        }));
+      },
+
+      clearActiveJob: (id) => {
+        set((state) => ({
+          simulations: state.simulations.map((s) =>
+            s.id === id ? { ...s, activeJobId: undefined, activeJobCreatedAtIso: undefined } : s
+          ),
         }));
       },
 

@@ -16,15 +16,23 @@ reçoit.
 ```
 frontend/  (Next.js 16 / React 19 / React Three Fiber)
      │ HTTP/JSON (fetch, voir frontend/src/lib/api/)
+     │  POST /api/v1/palletization-jobs   → 202, jobId (répond en < 1s)
+     │  GET  /api/v1/palletization-jobs/{id}  → statut, résultat une fois "succeeded" (polling)
      ▼
 backend/   (FastAPI, /api/v1/*)
-     │ appel direct
+     │ JobManager (ProcessPoolExecutor, hors boucle asyncio)
      ▼
-palletizer.application.services  (service headless, aucune dépendance FastAPI)
+palletizer.application.services  (service headless, aucune dépendance FastAPI ni au gestionnaire de jobs)
      │ port PackingEngine
      ▼
 palletizer.packing  (adaptateur py3dbp + règles métier Python)
 ```
+
+Le calcul (potentiellement long sur un ordre volumineux) s'exécute en tâche de fond côté backend,
+jamais dans une requête HTTP maintenue ouverte : le frontend crée un job, puis interroge
+périodiquement son statut (`usePalletizationJob`) et affiche un loader accessible (spinner + temps
+écoulé, sans pourcentage inventé) pendant l'attente. Voir `backend/README.md`, section "Jobs
+asynchrones", pour l'architecture complète (annulation, expiration, déduplication, limites).
 
 - **`frontend/`** — application Next.js existante (tableau de bord, configuration, commande,
   résultats, visualisation 3D, transport), adaptée pour consommer l'API au lieu de calculer
@@ -123,23 +131,32 @@ frontend/src/
                       validation de saisie manuelle. Aucune logique de packing.
   lib/
     api/             Client HTTP typé vers le backend :
-                      contract-types.ts  (types "sur le fil", reflet de contracts.py)
-                      to-domain.ts       (SEUL point de conversion contrat -> modèle de rendu)
-                      client.ts          (fetch, timeout, gestion d'erreurs typée ApiError)
+                      contract-types.ts     (types "sur le fil", reflet de contracts.py)
+                      to-domain.ts          (SEUL point de conversion contrat -> modèle de rendu)
+                      client.ts             (fetch, timeout, gestion d'erreurs typée ApiError,
+                                             création/consultation/annulation de job)
+                      job-polling.ts        (logique de polling PURE, sans React : interprétation
+                                             du statut d'un job, backoff réseau borné)
+                      use-palletization-job.ts  (hook React : orchestre client.ts + job-polling.ts,
+                                             persiste le jobId actif dans le store pour reprendre
+                                             le suivi après un rafraîchissement de page)
     import-export/    Export des résultats (JSON/CSV) — pas d'import/parsing métier côté client.
-  store/               État (Zustand) et persistance locale des simulations.
+  store/               État (Zustand) et persistance locale des simulations (dont le `jobId` actif).
   components/
     order-table/         Édition manuelle de la commande + upload CSV (délégué au backend).
     configuration/         Écran de configuration (transport, palette, contraintes).
-    results/                 Résultats, KPI, export, fiche imprimable.
+    results/                 Résultats, KPI, export, fiche imprimable, `optimization-loader.tsx`
+                              (spinner accessible `role="status"`, sans pourcentage ni barre).
     three/                    Visualisation 3D (React Three Fiber) — consomme le résultat du
                               backend via `to-domain.ts`, aucun recalcul de position/orientation.
     transport/                 Chargement transport — appelle `/api/v1/transport/load`.
 tests/
-  unit/                Vitest : client API (fetch mocké), conversions contrat -> domaine.
+  unit/                Vitest : client API (fetch mocké), conversions contrat -> domaine, logique
+                       de polling de job (interprétation de statut, backoff réseau).
   e2e/                 Playwright : démarre le VRAI backend Python + le frontend, teste le
                        parcours complet (démonstration, import CSV réel multi-commandes, panne
-                       backend), sans jamais réimplémenter l'algorithme en TypeScript.
+                       backend, cycle de vie complet d'un job asynchrone — voir
+                       async-job-flow.spec.ts), sans jamais réimplémenter l'algorithme en TypeScript.
 ```
 
 ## Format CSV
@@ -169,11 +186,18 @@ versionné (`contractVersion: "1.0"`), indépendant du format CSV historique.
 - Le contrôle de support/stabilité est une approximation 2D, pas une simulation physique (voir
   l'avertissement ci-dessus).
 - **Performance sur les grandes quantités** : le moteur reste un algorithme Python pur (extreme
-  points), sans parallélisation. Au-delà de ~500 instances de cartons, un avertissement est
-  renvoyé par l'API et le mode rapide est recommandé — au-delà de plusieurs milliers d'instances
-  (le CSV réel joint contient des lignes à 6990, voire 44 250 unités), le calcul peut devenir
-  lent (plusieurs dizaines de secondes à quelques minutes). Ce n'est pas un plafond dur, mais une
-  limite pratique documentée, identique à celle de l'ancien moteur TypeScript.
+  points), optimisé (index spatial, déduplication d'orientations, mémoïsation) sans jamais changer
+  de résultat en dessous de `PARALLEL_BATCH_THRESHOLD` (3000 instances) ; au-delà, les commandes les
+  plus extrêmes sont réparties sur plusieurs processus (`pack_with_strategy_parallel`) pour un
+  parallélisme CPU réel, au prix d'un compromis de compacité limité par une passe de consolidation
+  — voir `backend/README.md`, section "Performance sur les grandes commandes", pour le détail des 5
+  optimisations et les mesures. Au-delà de ~500 instances de cartons, un avertissement est renvoyé
+  par l'API et le mode rapide est recommandé. Sur un ordre réel de 10 881 cartons (65 → 12
+  références), le rangement passe de 17-18 palettes à **8** (contre 9 attendues historiquement)
+  après correction d'un bug de troncature qui bloquait prématurément l'empilement en hauteur.
+  `PALLETIZATION_JOB_TIMEOUT_SECONDS` a été relevé à 3600s (1h) par défaut en conséquence. Ce n'est
+  de toute façon jamais un problème d'expérience utilisateur : le job continue en tâche de fond, le
+  frontend affiche un loader et reprend le suivi même après un rafraîchissement de page.
 - Le module de chargement transport (`packing/transport_packer.py`) reste un heuristique 2D par
   étagères (Next-Fit Decreasing Height), pas un solveur combinatoire complet.
 - Les dimensions de véhicules/conteneurs proposées en préréglage sont indicatives.

@@ -20,9 +20,9 @@ export function LayerControls({
   onResetCamera: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-md border border-slate-200 bg-white px-4 py-3">
-      <div className="flex items-center gap-2">
-        <Layers className="h-4 w-4 text-slate-500" />
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-4 rounded-md border border-slate-200 bg-white px-4 py-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <Layers className="h-4 w-4 shrink-0 text-slate-500" />
         <Label className="text-xs">Couche</Label>
         <Button size="sm" variant={layerIndex === null ? "turquoise" : "secondary"} onClick={() => onLayerChange(null)}>
           Toutes

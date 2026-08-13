@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSimulationStore } from "@/store/simulation-store";
-import { ApiError, palletize } from "@/lib/api/client";
+import { usePalletizationJob } from "@/lib/api/use-palletization-job";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfigurationPanel } from "@/components/configuration/configuration-panel";
 import { OrderTable } from "@/components/order-table/order-table";
@@ -19,11 +19,8 @@ export function SimulationWorkspace({ simulationId }: { simulationId: string }) 
   const hasHydrated = useSimulationStore((s) => s.hasHydrated);
   const simulation = useSimulationStore((s) => s.simulations.find((sim) => sim.id === simulationId));
   const renameSimulation = useSimulationStore((s) => s.renameSimulation);
-  const setResult = useSimulationStore((s) => s.setResult);
 
   const [activeTab, setActiveTab] = useState("commande");
-  const [isRunning, setIsRunning] = useState(false);
-  const [runError, setRunError] = useState<string | null>(null);
 
   useEffect(() => {
     if (hasHydrated && !simulation) {
@@ -31,29 +28,18 @@ export function SimulationWorkspace({ simulationId }: { simulationId: string }) 
     }
   }, [hasHydrated, simulation, router]);
 
+  // Instancié ici (et non dans `ResultsPanel`) car `TabsContent` de Radix démonte les onglets
+  // inactifs : un hook de polling placé dans le panneau Résultats s'arrêterait dès que
+  // l'utilisateur change d'onglet pendant le calcul.
+  const job = usePalletizationJob(simulation);
+
   if (!hasHydrated || !simulation) {
     return <div className="flex flex-1 items-center justify-center text-sm text-slate-500">Chargement…</div>;
   }
 
   async function handleRun() {
-    if (!simulation) return;
-    setIsRunning(true);
-    setRunError(null);
-    try {
-      const result = await palletize(simulation);
-      setResult(simulation.id, result);
-      setActiveTab("resultats");
-    } catch (error) {
-      setRunError(
-        error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "Erreur inattendue pendant l'optimisation."
-      );
-    } finally {
-      setIsRunning(false);
-    }
+    await job.start();
+    setActiveTab("resultats");
   }
 
   return (
@@ -72,7 +58,6 @@ export function SimulationWorkspace({ simulationId }: { simulationId: string }) 
           />
           <Badge variant="navy">{TRANSPORT_MODE_LABELS[simulation.settings.transportMode]}</Badge>
         </div>
-        {runError && <p className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-500">{runError}</p>}
       </header>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -92,7 +77,16 @@ export function SimulationWorkspace({ simulationId }: { simulationId: string }) 
         </TabsContent>
 
         <TabsContent value="resultats">
-          <ResultsPanel simulation={simulation} isRunning={isRunning} onRun={handleRun} />
+          <ResultsPanel
+            simulation={simulation}
+            isRunning={job.isRunning}
+            elapsedSeconds={job.elapsedSeconds}
+            errorMessage={job.errorMessage}
+            networkMessage={job.networkMessage}
+            canCancel={job.canCancel}
+            onRun={handleRun}
+            onCancel={job.cancel}
+          />
         </TabsContent>
 
         <TabsContent value="transport">

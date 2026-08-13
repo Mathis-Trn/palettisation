@@ -56,9 +56,13 @@ test("import du CSV réel : plusieurs commandes détectées, sélection, puis ca
 });
 
 test("affiche un état clair lorsque le backend est indisponible", async ({ page }) => {
-  // Simule un backend injoignable en interceptant uniquement l'appel d'optimisation, sans
+  // Simule un backend injoignable en interceptant uniquement la création du job asynchrone, sans
   // dépendre d'une variable d'environnement (NEXT_PUBLIC_PALLETIZER_API_URL est figée au build).
-  await page.route("**/api/v1/palletize", (route) => route.abort("connectionrefused"));
+  // Le calcul n'est plus tenu dans une seule requête HTTP (voir tests/e2e/async-job-flow.spec.ts) :
+  // c'est la création du job elle-même qui doit échouer proprement ici.
+  await page.route("**/api/v1/palletization-jobs", (route) =>
+    route.request().method() === "POST" ? route.abort("connectionrefused") : route.continue()
+  );
 
   await page.goto("/");
   await page.getByRole("button", { name: "Démonstration", exact: true }).click();

@@ -89,7 +89,4 @@ export const TRANSPORT_VEHICLE_PRESETS = [
 
 export const ENGINE_VERSION = "1.0.0-mvp";
 
-/** Nombre approximatif d'instances de cartons pour lesquelles l'expérience reste fluide. */
-export const PRACTICAL_INSTANCE_LIMIT = 500;
-
 export const STORAGE_SCHEMA_VERSION = 1;

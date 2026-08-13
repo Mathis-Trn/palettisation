@@ -241,3 +241,25 @@ export type CapabilitiesResponseContract = {
 export type ErrorResponseContract = {
   error: { code: string; message: string; correlation_id: string };
 };
+
+// --- /palletization-jobs (calcul asynchrone) --------------------------------------------------
+
+export type JobStatusContract = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "expired";
+
+export type JobErrorContract = { code: string; message: string };
+
+export type JobCreatedResponseContract = {
+  jobId: string;
+  status: JobStatusContract;
+  createdAt: string;
+};
+
+export type JobStatusResponseContract = {
+  jobId: string;
+  status: JobStatusContract;
+  createdAt: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  result?: PalletizeResponseContract | null;
+  error?: JobErrorContract | null;
+};

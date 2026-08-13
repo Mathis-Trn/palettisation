@@ -4,10 +4,24 @@ import {
   contractToOptimizationResult,
   contractToTransportLoadResult,
   orderLineContractToCartonLine,
+  settingsToOptionsContract,
   transportModeToShippingMode,
 } from "@/lib/api/to-domain";
-import type { CartonLine } from "@/domain/types";
+import { defaultSettings } from "@/store/simulation-store";
+import type { CartonLine, Simulation } from "@/domain/types";
 import type { PalletizeResponseContract, TransportLoadResponseContract } from "@/lib/api/contract-types";
+
+function makeSimulation(settings: ReturnType<typeof defaultSettings>): Simulation {
+  return {
+    id: "sim-1",
+    name: "Test",
+    createdAtIso: "2026-01-01T00:00:00.000Z",
+    updatedAtIso: "2026-01-01T00:00:00.000Z",
+    settings,
+    cartonLines: [],
+    storageVersion: 1,
+  };
+}
 
 describe("transportModeToShippingMode", () => {
   it("maps the three transport modes to the contract's shipping modes", () => {
@@ -38,6 +52,22 @@ describe("cartonLineToOrderLineContract / orderLineContractToCartonLine round tr
 
     const roundTripped = orderLineContractToCartonLine(contract);
     expect(roundTripped).toEqual(line);
+  });
+});
+
+describe("settingsToOptionsContract", () => {
+  it("maps optimization level and rotation/fragility settings through", () => {
+    const simulation = makeSimulation(defaultSettings());
+    const options = settingsToOptionsContract(simulation);
+    expect(options.optimizationLevel).toBe("fast");
+    expect(options.globalRotationsEnabled).toBe(true);
+    expect(options.fragileMaxWeightOnTopKg).toBe(defaultSettings().fragileMaxWeightOnTopKg);
+  });
+
+  it("maps 'approfondi' to the 'thorough' contract value", () => {
+    const settings = { ...defaultSettings(), optimizationLevel: "approfondi" as const };
+    const simulation = makeSimulation(settings);
+    expect(settingsToOptionsContract(simulation).optimizationLevel).toBe("thorough");
   });
 });
 

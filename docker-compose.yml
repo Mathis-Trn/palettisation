@@ -7,6 +7,15 @@ services:
     environment:
       APP_ENV: production
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      # Jobs de palettisation asynchrones (voir backend/README.md, section "Jobs asynchrones") :
+      # le calcul tourne en tâche de fond (ProcessPoolExecutor), jamais dans une requête HTTP
+      # maintenue ouverte, donc aucun de ces délais n'affecte la durée d'une requête HTTP.
+      PALLETIZATION_JOB_TIMEOUT_SECONDS: ${PALLETIZATION_JOB_TIMEOUT_SECONDS:-3600}
+      PALLETIZATION_JOB_RETENTION_SECONDS: ${PALLETIZATION_JOB_RETENTION_SECONDS:-3600}
+      PALLETIZATION_MAX_CONCURRENT_JOBS: ${PALLETIZATION_MAX_CONCURRENT_JOBS:-1}
+      # Nombre de processus workers pour paralléliser le calcul d'UN SEUL job volumineux (voir
+      # backend/README.md). Vide = nombre de coeurs CPU détectés dans le conteneur.
+      PALLETIZATION_PACKING_WORKERS: ${PALLETIZATION_PACKING_WORKERS:-}
     healthcheck:
       test:
         [
@@ -27,6 +36,8 @@ services:
         # Doit être joignable depuis le NAVIGATEUR (l'hôte), pas depuis le réseau interne
         # docker-compose : ne jamais mettre "http://backend:8000" ici.
         NEXT_PUBLIC_PALLETIZER_API_URL: ${NEXT_PUBLIC_PALLETIZER_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_JOB_POLL_INTERVAL_MS: ${NEXT_PUBLIC_JOB_POLL_INTERVAL_MS:-2000}
+        NEXT_PUBLIC_API_REQUEST_TIMEOUT_MS: ${NEXT_PUBLIC_API_REQUEST_TIMEOUT_MS:-15000}
     ports:
       - "3000:3000"
     depends_on:

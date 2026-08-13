@@ -5,24 +5,34 @@ import type { Simulation } from "@/domain/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KpiCards } from "./kpi-cards";
+import { OptimizationLoader } from "./optimization-loader";
 import { PalletNavigator } from "./pallet-navigator";
 import { PlacedCartonsTable } from "./placed-cartons-table";
 import { UnplacedCartonsTable } from "./unplaced-cartons-table";
 import { PrintSummary } from "./print-summary";
 import { PalletViewer } from "@/components/three/pallet-viewer";
-import { Download, Play, Printer, AlertTriangle } from "lucide-react";
+import { Download, Loader2, Play, Printer, AlertTriangle } from "lucide-react";
 import { downloadTextFile } from "@/lib/download";
 import { exportPlacedCartonsToCsv, exportResultToJson, exportUnplacedCartonsToCsv } from "@/lib/import-export/export-result";
-import { PRACTICAL_INSTANCE_LIMIT } from "@/domain/constants";
 
 export function ResultsPanel({
   simulation,
   isRunning,
+  elapsedSeconds,
+  errorMessage,
+  networkMessage,
+  canCancel,
   onRun,
+  onCancel,
 }: {
   simulation: Simulation;
   isRunning: boolean;
+  elapsedSeconds: number;
+  errorMessage: string | null;
+  networkMessage: string | null;
+  canCancel: boolean;
   onRun: () => void;
+  onCancel: () => void;
 }) {
   const result = simulation.lastResult;
   const [selectedPalletIndex, setSelectedPalletIndex] = useState(0);
@@ -46,12 +56,6 @@ export function ResultsPanel({
             <p className="text-sm text-navy-900">
               {totalQuantity} carton(s) dans la commande, {simulation.cartonLines.length} référence(s).
             </p>
-            {totalQuantity > PRACTICAL_INSTANCE_LIMIT && (
-              <p className="mt-1 flex items-center gap-1 text-xs text-warning-500">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                Commande volumineuse : le mode rapide est recommandé pour rester fluide.
-              </p>
-            )}
           </div>
           <div className="flex gap-2">
             {result && (
@@ -90,24 +94,36 @@ export function ResultsPanel({
                 </Button>
               </>
             )}
+            {canCancel && (
+              <Button size="sm" variant="secondary" onClick={onCancel}>
+                Annuler le calcul
+              </Button>
+            )}
             <Button size="sm" onClick={onRun} disabled={isRunning || simulation.cartonLines.length === 0}>
-              <Play className="h-3.5 w-3.5" />
-              {result ? "Relancer l'optimisation" : "Lancer l'optimisation"}
+              {isRunning ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+              ) : (
+                <Play className="h-3.5 w-3.5" />
+              )}
+              {isRunning ? "Calcul en cours…" : result ? "Relancer l'optimisation" : "Lancer l'optimisation"}
             </Button>
           </div>
         </CardContent>
       </Card>
 
+      {errorMessage && !isRunning && (
+        <p className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-500">{errorMessage}</p>
+      )}
+
       {isRunning && (
         <Card>
-          <CardContent className="py-4">
-            <p className="mb-2 text-sm text-navy-800">
-              Calcul en cours sur le serveur de palettisation… (le backend ne rapporte pas de
-              progression détaillée, seulement le résultat final)
-            </p>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full w-1/3 animate-pulse rounded-full bg-turquoise-500" />
-            </div>
+          <CardContent>
+            <OptimizationLoader elapsedSeconds={elapsedSeconds} />
+            {networkMessage && (
+              <p className="mt-1 text-center text-xs text-warning-500" role="status">
+                {networkMessage}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

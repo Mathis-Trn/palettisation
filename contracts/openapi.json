@@ -193,6 +193,139 @@
           }
         }
       }
+    },
+    "/api/v1/palletization-jobs": {
+      "post": {
+        "summary": "Create Palletization Job",
+        "description": "Démarre un calcul hors du cycle de requête HTTP (voir `jobs/manager.py`) : ce calcul étant\nCPU-bound et pouvant durer jusqu'à `PALLETIZATION_JOB_TIMEOUT_SECONDS`, il ne s'exécute jamais\ndans la boucle asyncio de FastAPI ni dans le cycle de vie de cette requête, qui répond\nimmédiatement avec le statut initial du job.",
+        "operationId": "create_palletization_job_api_v1_palletization_jobs_post",
+        "parameters": [
+          {
+            "name": "X-Palletizer-Test-Delay-Seconds",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Palletizer-Test-Delay-Seconds"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PalletizeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobCreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/palletization-jobs/{job_id}": {
+      "get": {
+        "summary": "Get Palletization Job",
+        "operationId": "get_palletization_job_api_v1_palletization_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel Palletization Job",
+        "operationId": "cancel_palletization_job_api_v1_palletization_jobs__job_id__delete",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -502,6 +635,125 @@
           "engineVersion"
         ],
         "title": "HealthResponse"
+      },
+      "JobCreatedResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "jobId",
+          "status",
+          "createdAt"
+        ],
+        "title": "JobCreatedResponse"
+      },
+      "JobErrorContract": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "JobErrorContract"
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "expired"
+        ],
+        "title": "JobStatus"
+      },
+      "JobStatusResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "startedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startedat"
+          },
+          "finishedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finishedat"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PalletizeResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobErrorContract"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "jobId",
+          "status",
+          "createdAt"
+        ],
+        "title": "JobStatusResponse"
       },
       "LegacyExpectedResultContract": {
         "properties": {
