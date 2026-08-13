@@ -5,21 +5,50 @@ calcul automatique de la répartition sur des palettes (transport routier, marit
 visualisation 3D interactive, export des résultats et estimation du chargement dans un véhicule
 ou un conteneur.
 
-Application 100 % locale : aucun compte utilisateur, aucune clé d'API externe, aucune base de
-données. Les simulations sont sauvegardées dans le stockage local du navigateur.
+## Architecture
 
-## Objectif du projet
+Le moteur de palettisation est un **backend Python headless**, entièrement découplé du front :
+utilisable comme bibliothèque, en CLI, ou via une API HTTP versionnée. Le frontend Next.js ne
+contient **aucune** logique de packing, de collision, de rotation, de support, de scoring ou de
+chargement transport — il envoie les données brutes au backend et affiche exactement ce qu'il
+reçoit.
 
-Aider un préparateur logistique à déterminer, pour une commande donnée, combien de palettes sont
-nécessaires, comment les cartons doivent y être disposés, et combien de palettes chargées peuvent
-entrer dans un véhicule ou un conteneur — avec une vue 3D permettant de vérifier visuellement le
-plan de chargement avant expédition.
+```
+frontend/  (Next.js 16 / React 19 / React Three Fiber)
+     │ HTTP/JSON (fetch, voir frontend/src/lib/api/)
+     │  POST /api/v1/palletization-jobs   → 202, jobId (répond en < 1s)
+     │  GET  /api/v1/palletization-jobs/{id}  → statut, résultat une fois "succeeded" (polling)
+     ▼
+backend/   (FastAPI, /api/v1/*)
+     │ JobManager (ProcessPoolExecutor, hors boucle asyncio)
+     ▼
+palletizer.application.services  (service headless, aucune dépendance FastAPI ni au gestionnaire de jobs)
+     │ port PackingEngine
+     ▼
+palletizer.packing  (adaptateur py3dbp + règles métier Python)
+```
 
-Le moteur de placement est un **moteur d'optimisation combinatoire** (heuristique de type
-« points extrêmes » / espaces maximaux), volontairement **pas** qualifié d'intelligence
-artificielle. L'architecture (voir plus bas) est conçue pour accueillir plus tard des évolutions
-telles que l'apprentissage à partir de plans validés par des opérateurs, la comparaison de
-plusieurs heuristiques, un scoring prédictif ou un solveur combinatoire plus avancé.
+Le calcul (potentiellement long sur un ordre volumineux) s'exécute en tâche de fond côté backend,
+jamais dans une requête HTTP maintenue ouverte : le frontend crée un job, puis interroge
+périodiquement son statut (`usePalletizationJob`) et affiche un loader accessible (spinner + temps
+écoulé, sans pourcentage inventé) pendant l'attente. Voir `backend/README.md`, section "Jobs
+asynchrones", pour l'architecture complète (annulation, expiration, déduplication, limites).
+
+- **`frontend/`** — application Next.js existante (tableau de bord, configuration, commande,
+  résultats, visualisation 3D, transport), adaptée pour consommer l'API au lieu de calculer
+  localement. Voir `frontend/` (README embarqué dans ce fichier, section Frontend ci-dessous).
+- **`backend/`** — package Python `palletizer` : domaine pur, adaptateur
+  [py3dbp](https://pypi.org/project/py3dbp/) (bin packing 3D), import CSV métier réel, service
+  applicatif, CLI (Typer), API (FastAPI). Voir `backend/README.md`.
+- **`contracts/`** — `openapi.json` (généré depuis FastAPI) et des exemples de requête/réponse
+  JSON (`contracts/examples/`).
+- **`docker-compose.yml`** — orchestration des deux services pour le développement local.
+
+Le moteur (`backend/src/palletizer/packing`, `application`) implémente une heuristique de type
+**points extrêmes** (Extreme Points) autour de py3dbp, portée fidèlement depuis l'ancien moteur
+TypeScript (même algorithme, mêmes scores, même déterminisme), volontairement **pas** qualifiée
+d'intelligence artificielle ni de solveur garantissant l'optimum mathématique — voir
+[Limites connues](#limites-connues).
 
 ## ⚠️ Avertissement sur la stabilité physique
 
@@ -30,164 +59,162 @@ d'emballage, ni le calage. **Il ne constitue en aucun cas une certification phys
 chargement.** Toute décision de chargement réel doit être validée par un professionnel qualifié
 selon les règles et normes applicables (ex. code de la route, consignes du transporteur).
 
-## Prérequis
-
-- Node.js **20.9 ou supérieur** (Next.js 16 l'exige — voir `package.json`).
-- npm 10+ (fourni avec Node).
-
-## Installation
-
-```bash
-npm install
-```
-
 ## Démarrage
 
+### A. Développement complet (recommandé)
+
 ```bash
-npm run dev
+docker compose up --build
 ```
 
-Puis ouvrir [http://localhost:3000](http://localhost:3000). Un jeu de données de démonstration
-est chargeable en un clic depuis le tableau de bord (bouton **Démonstration**).
+Puis ouvrir [http://localhost:3000](http://localhost:3000). Le backend écoute sur
+[http://localhost:8000](http://localhost:8000) (`/health`, `/api/v1/capabilities`, documentation
+interactive sur `/docs`).
 
-Build de production :
+**Piège classique** : `NEXT_PUBLIC_PALLETIZER_API_URL` doit être une URL joignable depuis le
+**navigateur** de l'utilisateur, jamais le nom de service interne docker-compose
+(`http://backend:8000` ne fonctionnera pas dans le navigateur — utiliser `http://localhost:8000`,
+qui fonctionne car le port est publié sur l'hôte).
+
+Alternative sans Docker, deux terminaux :
 
 ```bash
-npm run build
-npm run start
+# terminal 1
+cd backend && uv sync --dev && uv run uvicorn palletizer.api.main:app --reload --port 8000
+# terminal 2
+cd frontend && npm install && npm run dev
+```
+
+### B. Backend headless seul (sans front, sans serveur si besoin)
+
+```bash
+cd backend
+uv sync --dev
+uv run uvicorn palletizer.api.main:app --host 0.0.0.0 --port 8000   # avec API
+# ou, sans aucun serveur :
+uv run palletizer capabilities
+uv run palletizer optimize-csv commande.csv --order SO265669-X82921 --output -
+```
+
+Voir `backend/README.md` pour l'usage en bibliothèque Python pure (sans FastAPI).
+
+### C. Frontend seul, backend distant
+
+```bash
+cd frontend
+NEXT_PUBLIC_PALLETIZER_API_URL=https://backend.exemple.fr npm run dev
 ```
 
 ## Commandes de test
 
 ```bash
-npm run typecheck   # TypeScript strict, sans émission
-npm run lint        # ESLint
-npm run test        # Tests unitaires (Vitest) : moteur, CSV, transport-loader
-npm run test:watch  # Tests unitaires en mode watch
-npm run test:e2e    # Test de parcours principal (Playwright)
+# Backend
+cd backend
+uv run ruff check .
+uv run mypy src
+uv run pytest --cov=src/palletizer
+
+# Frontend
+cd frontend
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run test:e2e    # démarre automatiquement le backend réel ET le frontend (voir playwright.config.ts)
 ```
 
-Le test Playwright démarre automatiquement le serveur de développement (`npm run dev`) si aucun
-serveur n'est déjà lancé sur le port 3000 (voir `playwright.config.ts`).
-
-## Structure du projet
+## Frontend — structure
 
 ```
-src/
-  domain/            Types, unités, constantes et schémas de validation (Zod).
-                      Aucune dépendance à React ni à Three.js.
-  optimizer/          Moteur de palettisation pur (déterministe, testable isolément) :
-                      expansion des quantités, orientations, tri, heuristique de placement,
-                      contrôle de support, scoring, orchestration multi-stratégies.
-  transport-loader/   Module indépendant : placement 2D des palettes chargées dans un
-                      véhicule ou un conteneur.
-  workers/            Exécution du moteur hors du thread principal (Web Worker), avec repli
-                      synchrone si les Web Workers ne sont pas disponibles.
+frontend/src/
+  domain/            Types du modèle de rendu (dimensions, positions, résultats), Zod pour la
+                      validation de saisie manuelle. Aucune logique de packing.
   lib/
-    import-export/    Import/export CSV (Papa Parse) et JSON.
-    demo-data.ts       Jeu de données de démonstration.
-    format.ts, utils.ts
-  store/               État de l'application (Zustand) et persistance locale versionnée.
+    api/             Client HTTP typé vers le backend :
+                      contract-types.ts     (types "sur le fil", reflet de contracts.py)
+                      to-domain.ts          (SEUL point de conversion contrat -> modèle de rendu)
+                      client.ts             (fetch, timeout, gestion d'erreurs typée ApiError,
+                                             création/consultation/annulation de job)
+                      job-polling.ts        (logique de polling PURE, sans React : interprétation
+                                             du statut d'un job, backoff réseau borné)
+                      use-palletization-job.ts  (hook React : orchestre client.ts + job-polling.ts,
+                                             persiste le jobId actif dans le store pour reprendre
+                                             le suivi après un rafraîchissement de page)
+    import-export/    Export des résultats (JSON/CSV) — pas d'import/parsing métier côté client.
+  store/               État (Zustand) et persistance locale des simulations (dont le `jobId` actif).
   components/
-    ui/                Composants d'interface accessibles (boutons, tableaux, dialogues...).
-    dashboard/          Tableau de bord (liste des simulations).
-    configuration/       Écran de configuration (transport, palette, contraintes).
-    order-table/          Tableau de commande éditable + import CSV.
-    results/               Résultats, KPI, export, fiche imprimable.
-    three/                  Visualisation 3D (React Three Fiber / Drei).
-    transport/               Module de chargement transport (plan 2D).
-    workspace/                 Assemblage des écrans d'une simulation (onglets).
-  app/                 Routes Next.js (App Router) : tableau de bord et espace de simulation.
+    order-table/         Édition manuelle de la commande + upload CSV (délégué au backend).
+    configuration/         Écran de configuration (transport, palette, contraintes).
+    results/                 Résultats, KPI, export, fiche imprimable, `optimization-loader.tsx`
+                              (spinner accessible `role="status"`, sans pourcentage ni barre).
+    three/                    Visualisation 3D (React Three Fiber) — consomme le résultat du
+                              backend via `to-domain.ts`, aucun recalcul de position/orientation.
+    transport/                 Chargement transport — appelle `/api/v1/transport/load`.
 tests/
-  unit/                Tests unitaires Vitest (moteur, CSV, transport-loader).
-  e2e/                 Test Playwright du parcours principal.
+  unit/                Vitest : client API (fetch mocké), conversions contrat -> domaine, logique
+                       de polling de job (interprétation de statut, backoff réseau).
+  e2e/                 Playwright : démarre le VRAI backend Python + le frontend, teste le
+                       parcours complet (démonstration, import CSV réel multi-commandes, panne
+                       backend, cycle de vie complet d'un job asynchrone — voir
+                       async-job-flow.spec.ts), sans jamais réimplémenter l'algorithme en TypeScript.
 ```
-
-Le cœur d'optimisation (`src/optimizer`, `src/domain`, `src/transport-loader`) ne dépend ni de
-React ni de Three.js : il est testable et réutilisable indépendamment de l'interface.
 
 ## Format CSV
 
-En-têtes attendus (séparateur virgule ou point-virgule, détecté automatiquement) :
+Le format CSV **réel** attendu par le backend est documenté en détail dans
+`backend/CSV_ANALYSIS_REPORT.md` (mapping complet des colonnes `DEPXENT;CDEXENT;MDTXENT;
+TYPEPALETTE;...`, décodage des colonnes `CARTON_DETAIL_1..10` dont les décimales sont éclatées par
+le séparateur, conversion des formats de palette `P:LxlxH`). L'import CSV se fait exclusivement
+côté backend (`POST /api/v1/orders/parse-csv` ou `POST /api/v1/palletize/csv`) : le front envoie le
+fichier brut, jamais de parsing dupliqué côté client.
 
-```
-sku,longueur_mm,largeur_mm,hauteur_mm,quantite,poids_kg,rotation_autorisee,sens_vertical,fragile,gerbable
-BOX-A,400,300,250,12,8.5,true,false,false,true
-BOX-B,600,400,300,8,12,true,true,false,true
-BOX-C,250,200,150,20,3,true,false,true,true
-```
+La saisie manuelle de cartons dans le tableau de commande reste possible et produit le même
+contrat JSON normalisé (voir `contracts/examples/palletize_request.json`) que l'import CSV.
 
-- Colonnes obligatoires : `sku`, `longueur_mm`, `largeur_mm`, `hauteur_mm`, `quantite`.
-- Colonnes optionnelles : `poids_kg`, `rotation_autorisee`, `sens_vertical`, `fragile`,
-  `gerbable`, `groupe`. Valeurs par défaut si absentes : rotation autorisée = vrai, sens vertical
-  = faux, fragile = faux, gerbable = vrai.
-- Valeurs booléennes reconnues (insensible à la casse) : `true`, `vrai`, `1`, `oui`, `yes`, `y`,
-  `x`. Voir `ASSUMPTIONS.md` pour le détail des conventions retenues.
-- Le modèle ci-dessus est téléchargeable directement depuis l'écran **Commande** de l'application.
+## Contrat JSON normalisé
 
-## Explication de l'algorithme
-
-Le moteur (`src/optimizer`) implémente une heuristique de type **points extrêmes** (Extreme
-Points), une approche classique du bin packing 3D :
-
-1. **Expansion** : chaque ligne de commande est développée en instances individuelles de cartons
-   (une par unité de quantité), avec un identifiant déterministe.
-2. **Orientations** : pour chaque instance, les orientations autorisées sont calculées selon les
-   réglages (rotation autorisée ou non, sens vertical obligatoire ou non) — jusqu'à 6 permutations
-   possibles des axes longueur/largeur/hauteur.
-3. **Tri** : les instances sont triées selon une stratégie (volume décroissant, plus grande
-   dimension décroissante, poids décroissant, ou surface au sol décroissante). Le mode rapide
-   n'essaie qu'une stratégie ; le mode approfondi les essaie toutes et conserve la meilleure
-   solution (moins de palettes, puis meilleur remplissage, puis meilleure stabilité moyenne).
-4. **Points candidats** : chaque palette maintient une liste de points extrêmes (positions
-   candidates), initialisée au coin de la palette. Après chaque placement, trois nouveaux points
-   sont générés sur les faces du carton posé (droite, arrière, dessus).
-5. **Placement** : pour chaque instance, toutes les combinaisons (point candidat × orientation
-   autorisée) sont testées et validées (limites de la palette, absence de chevauchement, poids,
-   gerbage, fragilité, ratio de support). Parmi les combinaisons valides, celle avec le meilleur
-   score est retenue — le score combine hauteur résultante, proximité de l'origine, surface de
-   support, contact avec les parois/le sol et regroupement des cartons de même SKU.
-6. **Nouvelle palette** : si aucune position valide n'existe sur les palettes déjà ouvertes, une
-   nouvelle palette est ouverte. Si le carton ne peut tenir sur une palette **vide** (dimensions,
-   poids), il est immédiatement marqué non plaçable — ce qui garantit qu'aucune boucle infinie ne
-   peut se produire.
-7. **Résultat** : chaque carton placé porte ses dimensions d'origine et placées, sa position, son
-   orientation et son palier ; chaque carton non placé porte un code (`DIMENSIONS_EXCEED_PALLET`,
-   `HEIGHT_EXCEEDED`, `WEIGHT_EXCEEDED`, `ROTATION_FORBIDDEN`, `STACKING_CONSTRAINT`,
-   `NO_STABLE_POSITION`, `INVALID_DATA`) et un message explicite.
-
-Le calcul est **déterministe** : à données et réglages identiques, le résultat est rigoureusement
-identique d'une exécution à l'autre (aucun aléa, tri stable, identifiants basés sur l'ordre
-d'entrée). Il s'exécute dans un **Web Worker** pour ne jamais bloquer l'interface, avec repli
-synchrone si les Web Workers ne sont pas disponibles.
+Voir `contracts/openapi.json` (généré automatiquement depuis FastAPI, `make backend-openapi` pour
+le régénérer) et `contracts/examples/` pour un exemple de requête/réponse complet. Le contrat est
+versionné (`contractVersion: "1.0"`), indépendant du format CSV historique.
 
 ## Limites connues
 
+- **py3dbp est une heuristique, pas un solveur garantissant l'optimum mathématique** — le nombre de
+  palettes retourné est « la meilleure solution trouvée », jamais présenté comme un minimum
+  théorique prouvé. Voir `backend/README.md` pour le détail de l'adaptateur et la correspondance
+  des axes domaine ↔ py3dbp ↔ Three.js.
 - Le contrôle de support/stabilité est une approximation 2D, pas une simulation physique (voir
   l'avertissement ci-dessus).
-- L'heuristique de points extrêmes ne garantit pas la solution optimale (minimum théorique de
-  palettes) : c'est un compromis performance/qualité usuel en bin packing 3D.
-- Le module de chargement transport n'effectue qu'un placement 2D des empreintes de palettes
-  (par étagères), avec un empilage simplifié à un seul niveau — ce n'est pas un solveur complet.
-- Les dimensions de véhicules/conteneurs proposées en préréglage sont indicatives et doivent être
-  vérifiées auprès du transporteur réel.
-- Cible de fluidité : environ 500 instances de cartons. Au-delà, un avertissement s'affiche et le
-  mode rapide est recommandé (le calcul reste possible, mais plus lent).
-- Aucun compte utilisateur, aucune synchronisation entre appareils : les simulations ne sont
-  sauvegardées que dans le navigateur utilisé (`localStorage`).
+- **Performance sur les grandes quantités** : le moteur reste un algorithme Python pur (extreme
+  points), optimisé (index spatial, déduplication d'orientations, mémoïsation) sans jamais changer
+  de résultat en dessous de `PARALLEL_BATCH_THRESHOLD` (3000 instances) ; au-delà, les commandes les
+  plus extrêmes sont réparties sur plusieurs processus (`pack_with_strategy_parallel`) pour un
+  parallélisme CPU réel, au prix d'un compromis de compacité limité par une passe de consolidation
+  — voir `backend/README.md`, section "Performance sur les grandes commandes", pour le détail des 5
+  optimisations et les mesures. Au-delà de ~500 instances de cartons, un avertissement est renvoyé
+  par l'API et le mode rapide est recommandé. Sur un ordre réel de 10 881 cartons (65 → 12
+  références), le rangement passe de 17-18 palettes à **8** (contre 9 attendues historiquement)
+  après correction d'un bug de troncature qui bloquait prématurément l'empilement en hauteur.
+  `PALLETIZATION_JOB_TIMEOUT_SECONDS` a été relevé à 3600s (1h) par défaut en conséquence. Ce n'est
+  de toute façon jamais un problème d'expérience utilisateur : le job continue en tâche de fond, le
+  frontend affiche un loader et reprend le suivi même après un rafraîchissement de page.
+- Le module de chargement transport (`packing/transport_packer.py`) reste un heuristique 2D par
+  étagères (Next-Fit Decreasing Height), pas un solveur combinatoire complet.
+- Les dimensions de véhicules/conteneurs proposées en préréglage sont indicatives.
+- Aucun compte utilisateur : les simulations sont sauvegardées uniquement dans le `localStorage`
+  du navigateur utilisé.
 
-Voir `ASSUMPTIONS.md` pour le détail complet des hypothèses métier retenues.
+Voir `ASSUMPTIONS.md` pour le détail complet des hypothèses métier retenues, et
+`docs/adr/0001-headless-python-backend.md` pour la justification du choix d'architecture.
 
 ## Pistes d'évolution
 
-- Ajout d'un vrai solveur combinatoire (programmation par contraintes ou métaheuristique de type
-  recuit simulé / algorithme génétique) pour les commandes complexes, en complément (et non en
-  remplacement) de l'heuristique actuelle.
-- Apprentissage à partir de plans de palettisation validés par des opérateurs, pour affiner le
-  scoring des placements.
-- Comparaison automatique de plusieurs heuristiques avec restitution du détail de chacune.
-- Solveur dédié pour le module de chargement transport (au-delà du placement 2D par étagères),
-  avec empilage multi-niveaux complet.
-- API et base de données pour la persistance multi-utilisateurs et multi-appareils (l'architecture
-  actuelle — domaine et moteur découplés de l'interface — est conçue pour absorber cette évolution
-  sans réécriture du cœur de calcul).
+- Remplacer py3dbp par une autre bibliothèque de bin packing 3D sans changer l'API ni le domaine
+  (le point d'extension est `palletizer.packing.py3dbp_adapter.oriented_dimensions`, injecté via
+  `application.ports.OrientationProvider`).
+- Génération des types TypeScript du client directement depuis `contracts/openapi.json` (via
+  `openapi-typescript`) plutôt que la définition manuelle actuelle dans
+  `frontend/src/lib/api/contract-types.ts`, pour éliminer tout risque de divergence.
+- Apprentissage à partir de plans de palettisation validés par des opérateurs.
+- Solveur combinatoire plus avancé en complément (et non en remplacement) de l'heuristique.
+- API et base de données pour la persistance multi-utilisateurs et multi-appareils.

@@ -1,0 +1,1825 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Palletizer API",
+    "description": "API headless de palettisation 3D et de chargement transport.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/capabilities": {
+      "get": {
+        "summary": "Capabilities",
+        "operationId": "capabilities_api_v1_capabilities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/parse-csv": {
+      "post": {
+        "summary": "Parse Csv",
+        "operationId": "parse_csv_api_v1_orders_parse_csv_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_csv_api_v1_orders_parse_csv_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseCsvResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/palletize": {
+      "post": {
+        "summary": "Palletize",
+        "operationId": "palletize_api_v1_palletize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PalletizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PalletizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/palletize/csv": {
+      "post": {
+        "summary": "Palletize Csv",
+        "operationId": "palletize_csv_api_v1_palletize_csv_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_palletize_csv_api_v1_palletize_csv_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PalletizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transport/load": {
+      "post": {
+        "summary": "Transport Load",
+        "operationId": "transport_load_api_v1_transport_load_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransportLoadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransportLoadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/palletization-jobs": {
+      "post": {
+        "summary": "Create Palletization Job",
+        "description": "Démarre un calcul hors du cycle de requête HTTP (voir `jobs/manager.py`) : ce calcul étant\nCPU-bound et pouvant durer jusqu'à `PALLETIZATION_JOB_TIMEOUT_SECONDS`, il ne s'exécute jamais\ndans la boucle asyncio de FastAPI ni dans le cycle de vie de cette requête, qui répond\nimmédiatement avec le statut initial du job.",
+        "operationId": "create_palletization_job_api_v1_palletization_jobs_post",
+        "parameters": [
+          {
+            "name": "X-Palletizer-Test-Delay-Seconds",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Palletizer-Test-Delay-Seconds"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PalletizeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobCreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/palletization-jobs/{job_id}": {
+      "get": {
+        "summary": "Get Palletization Job",
+        "operationId": "get_palletization_job_api_v1_palletization_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel Palletization Job",
+        "operationId": "cancel_palletization_job_api_v1_palletization_jobs__job_id__delete",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_palletize_csv_api_v1_palletize_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "orderId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orderid"
+          },
+          "optimizationLevel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Optimizationlevel"
+          },
+          "minimumSupportRatio": {
+            "type": "number",
+            "title": "Minimumsupportratio",
+            "default": 0.8
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_palletize_csv_api_v1_palletize_csv_post"
+      },
+      "Body_parse_csv_api_v1_orders_parse_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_csv_api_v1_orders_parse_csv_post"
+      },
+      "CapabilitiesResponse": {
+        "properties": {
+          "contractVersion": {
+            "type": "string",
+            "title": "Contractversion",
+            "default": "1.0"
+          },
+          "units": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Units",
+            "default": {
+              "dimensions": "mm",
+              "weight": "kg"
+            }
+          },
+          "supportedPalletFormats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supportedpalletformats"
+          },
+          "constraints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Constraints"
+          },
+          "limits": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Limits"
+          },
+          "packingAdapter": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Packingadapter"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "supportedPalletFormats",
+          "constraints",
+          "limits",
+          "packingAdapter"
+        ],
+        "title": "CapabilitiesResponse"
+      },
+      "CsvImportErrorContract": {
+        "properties": {
+          "lineNumber": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linenumber"
+          },
+          "column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "rawFragments": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rawfragments",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lineNumber",
+          "code",
+          "message"
+        ],
+        "title": "CsvImportErrorContract"
+      },
+      "CsvImportStatsContract": {
+        "properties": {
+          "ordersCount": {
+            "type": "integer",
+            "title": "Orderscount"
+          },
+          "palletFormats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Palletformats"
+          },
+          "shippingModes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Shippingmodes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ordersCount",
+          "palletFormats",
+          "shippingModes"
+        ],
+        "title": "CsvImportStatsContract"
+      },
+      "CsvImportWarningContract": {
+        "properties": {
+          "lineNumber": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linenumber"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lineNumber",
+          "message"
+        ],
+        "title": "CsvImportWarningContract"
+      },
+      "DimensionsContract": {
+        "properties": {
+          "length": {
+            "type": "number",
+            "title": "Length"
+          },
+          "width": {
+            "type": "number",
+            "title": "Width"
+          },
+          "height": {
+            "type": "number",
+            "title": "Height"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "length",
+          "width",
+          "height"
+        ],
+        "title": "DimensionsContract"
+      },
+      "DimensionsMmContract": {
+        "properties": {
+          "length": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Length"
+          },
+          "width": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Width"
+          },
+          "height": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Height"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "length",
+          "width",
+          "height"
+        ],
+        "title": "DimensionsMmContract"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ok"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "engineVersion": {
+            "type": "string",
+            "title": "Engineversion"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version",
+          "engineVersion"
+        ],
+        "title": "HealthResponse"
+      },
+      "JobCreatedResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "jobId",
+          "status",
+          "createdAt"
+        ],
+        "title": "JobCreatedResponse"
+      },
+      "JobErrorContract": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "JobErrorContract"
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "expired"
+        ],
+        "title": "JobStatus"
+      },
+      "JobStatusResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "startedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startedat"
+          },
+          "finishedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finishedat"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PalletizeResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobErrorContract"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "jobId",
+          "status",
+          "createdAt"
+        ],
+        "title": "JobStatusResponse"
+      },
+      "LegacyExpectedResultContract": {
+        "properties": {
+          "palletCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Palletcount"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "palletCount"
+        ],
+        "title": "LegacyExpectedResultContract"
+      },
+      "LoadedPalletPlacementContract": {
+        "properties": {
+          "palletResultIndex": {
+            "type": "integer",
+            "title": "Palletresultindex"
+          },
+          "vehicleIndex": {
+            "type": "integer",
+            "title": "Vehicleindex"
+          },
+          "x": {
+            "type": "number",
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "title": "Y"
+          },
+          "rotated": {
+            "type": "boolean",
+            "title": "Rotated"
+          },
+          "stackLevel": {
+            "type": "integer",
+            "title": "Stacklevel"
+          },
+          "lengthMm": {
+            "type": "number",
+            "title": "Lengthmm"
+          },
+          "widthMm": {
+            "type": "number",
+            "title": "Widthmm"
+          },
+          "heightMm": {
+            "type": "number",
+            "title": "Heightmm"
+          },
+          "weightKg": {
+            "type": "number",
+            "title": "Weightkg"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "palletResultIndex",
+          "vehicleIndex",
+          "x",
+          "y",
+          "rotated",
+          "stackLevel",
+          "lengthMm",
+          "widthMm",
+          "heightMm",
+          "weightKg"
+        ],
+        "title": "LoadedPalletPlacementContract"
+      },
+      "OptimizationLevel": {
+        "type": "string",
+        "enum": [
+          "fast",
+          "thorough"
+        ],
+        "title": "OptimizationLevel"
+      },
+      "OptionsContract": {
+        "properties": {
+          "optimizationLevel": {
+            "$ref": "#/components/schemas/OptimizationLevel",
+            "default": "fast"
+          },
+          "minimumSupportRatio": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Minimumsupportratio",
+            "default": 0.8
+          },
+          "globalRotationsEnabled": {
+            "type": "boolean",
+            "title": "Globalrotationsenabled",
+            "default": true
+          },
+          "fragileMaxWeightOnTopKg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Fragilemaxweightontopkg",
+            "default": 0.0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "OptionsContract"
+      },
+      "OrderContract": {
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Orderid"
+          },
+          "shippingMode": {
+            "$ref": "#/components/schemas/ShippingMode"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/OrderLineContract"
+            },
+            "type": "array",
+            "title": "Lines"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "orderId",
+          "shippingMode",
+          "lines"
+        ],
+        "title": "OrderContract"
+      },
+      "OrderLineContract": {
+        "properties": {
+          "lineNumber": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Linenumber"
+          },
+          "sku": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Sku"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "default": "PIECE"
+          },
+          "dimensionsMm": {
+            "$ref": "#/components/schemas/DimensionsMmContract"
+          },
+          "weightKg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weightkg"
+          },
+          "allowRotation": {
+            "type": "boolean",
+            "title": "Allowrotation",
+            "default": true
+          },
+          "uprightOnly": {
+            "type": "boolean",
+            "title": "Uprightonly",
+            "default": false
+          },
+          "fragile": {
+            "type": "boolean",
+            "title": "Fragile",
+            "default": false
+          },
+          "stackable": {
+            "type": "boolean",
+            "title": "Stackable",
+            "default": true
+          },
+          "maxSupportedWeightKg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxsupportedweightkg"
+          },
+          "productGroup": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productgroup"
+          },
+          "incompatibleGroups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Incompatiblegroups",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lineNumber",
+          "sku",
+          "quantity",
+          "dimensionsMm"
+        ],
+        "title": "OrderLineContract"
+      },
+      "OrientationCode": {
+        "type": "string",
+        "enum": [
+          "LWH",
+          "WLH",
+          "LHW",
+          "HWL",
+          "WHL",
+          "HLW"
+        ],
+        "title": "OrientationCode",
+        "description": "Les 6 permutations des axes longueur (L) / largeur (W) / hauteur (H).\n\nLe code se lit comme l'ordre (axe_x, axe_y, axe_z) après rotation : ``WLH`` signifie que la\nlargeur d'origine est posée le long de l'axe X, la longueur d'origine le long de l'axe Y, la\nhauteur d'origine restant verticale (axe Z)."
+      },
+      "PalletConfigContract": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "lengthMm": {
+            "type": "number",
+            "title": "Lengthmm"
+          },
+          "widthMm": {
+            "type": "number",
+            "title": "Widthmm"
+          },
+          "maxHeightMm": {
+            "type": "number",
+            "title": "Maxheightmm"
+          },
+          "emptyPalletHeightMm": {
+            "type": "number",
+            "title": "Emptypalletheightmm"
+          },
+          "maxHeightIncludesPallet": {
+            "type": "boolean",
+            "title": "Maxheightincludespallet"
+          },
+          "maxWeightKg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxweightkg"
+          },
+          "overhangMm": {
+            "type": "number",
+            "title": "Overhangmm"
+          },
+          "safetyGapMm": {
+            "type": "number",
+            "title": "Safetygapmm"
+          },
+          "minimumSupportRatio": {
+            "type": "number",
+            "title": "Minimumsupportratio"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "lengthMm",
+          "widthMm",
+          "maxHeightMm",
+          "emptyPalletHeightMm",
+          "maxHeightIncludesPallet",
+          "overhangMm",
+          "safetyGapMm",
+          "minimumSupportRatio"
+        ],
+        "title": "PalletConfigContract",
+        "description": "Miroir de l'objet `pallet` de la requête, renvoyé avec chaque palette du résultat pour que\nle rendu 3D dispose de toutes les dimensions/contraintes sans requête supplémentaire."
+      },
+      "PalletContract": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "default": ""
+          },
+          "lengthMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Lengthmm"
+          },
+          "widthMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Widthmm"
+          },
+          "maxHeightMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Maxheightmm"
+          },
+          "emptyPalletHeightMm": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Emptypalletheightmm",
+            "default": 144.0
+          },
+          "maxHeightIncludesPallet": {
+            "type": "boolean",
+            "title": "Maxheightincludespallet",
+            "default": true
+          },
+          "maxWeightKg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxweightkg"
+          },
+          "overhangMm": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Overhangmm",
+            "default": 0.0
+          },
+          "safetyGapMm": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Safetygapmm",
+            "default": 0.0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lengthMm",
+          "widthMm",
+          "maxHeightMm"
+        ],
+        "title": "PalletContract"
+      },
+      "PalletResultContract": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "config": {
+            "$ref": "#/components/schemas/PalletConfigContract"
+          },
+          "totalWeightKg": {
+            "type": "number",
+            "title": "Totalweightkg"
+          },
+          "usableVolumeMm3": {
+            "type": "number",
+            "title": "Usablevolumemm3"
+          },
+          "volumeUsedMm3": {
+            "type": "number",
+            "title": "Volumeusedmm3"
+          },
+          "volumeUsageRatio": {
+            "type": "number",
+            "title": "Volumeusageratio"
+          },
+          "footprintUsageRatio": {
+            "type": "number",
+            "title": "Footprintusageratio"
+          },
+          "maxHeightUsedMm": {
+            "type": "number",
+            "title": "Maxheightusedmm"
+          },
+          "placedCartons": {
+            "items": {
+              "$ref": "#/components/schemas/PlacedCartonContract"
+            },
+            "type": "array",
+            "title": "Placedcartons"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "index",
+          "config",
+          "totalWeightKg",
+          "usableVolumeMm3",
+          "volumeUsedMm3",
+          "volumeUsageRatio",
+          "footprintUsageRatio",
+          "maxHeightUsedMm",
+          "placedCartons"
+        ],
+        "title": "PalletResultContract"
+      },
+      "PalletToLoadContract": {
+        "properties": {
+          "palletResultIndex": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Palletresultindex"
+          },
+          "footprintLengthMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Footprintlengthmm"
+          },
+          "footprintWidthMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Footprintwidthmm"
+          },
+          "heightMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Heightmm"
+          },
+          "weightKg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Weightkg"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "palletResultIndex",
+          "footprintLengthMm",
+          "footprintWidthMm",
+          "heightMm",
+          "weightKg"
+        ],
+        "title": "PalletToLoadContract"
+      },
+      "PalletizeRequest": {
+        "properties": {
+          "contractVersion": {
+            "type": "string",
+            "title": "Contractversion",
+            "default": "1.0"
+          },
+          "order": {
+            "$ref": "#/components/schemas/OrderContract"
+          },
+          "pallet": {
+            "$ref": "#/components/schemas/PalletContract"
+          },
+          "options": {
+            "$ref": "#/components/schemas/OptionsContract",
+            "default": {
+              "optimizationLevel": "fast",
+              "minimumSupportRatio": 0.8,
+              "globalRotationsEnabled": true,
+              "fragileMaxWeightOnTopKg": 0.0
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "order",
+          "pallet"
+        ],
+        "title": "PalletizeRequest"
+      },
+      "PalletizeResponse": {
+        "properties": {
+          "contractVersion": {
+            "type": "string",
+            "title": "Contractversion",
+            "default": "1.0"
+          },
+          "orderId": {
+            "type": "string",
+            "title": "Orderid"
+          },
+          "engineVersion": {
+            "type": "string",
+            "title": "Engineversion"
+          },
+          "durationMs": {
+            "type": "number",
+            "title": "Durationms"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "totalCartonsCount": {
+            "type": "integer",
+            "title": "Totalcartonscount"
+          },
+          "placedCartonsCount": {
+            "type": "integer",
+            "title": "Placedcartonscount"
+          },
+          "unplacedCartonsCount": {
+            "type": "integer",
+            "title": "Unplacedcartonscount"
+          },
+          "palletsCount": {
+            "type": "integer",
+            "title": "Palletscount"
+          },
+          "globalVolumeUsageRatio": {
+            "type": "number",
+            "title": "Globalvolumeusageratio"
+          },
+          "totalWeightKg": {
+            "type": "number",
+            "title": "Totalweightkg"
+          },
+          "pallets": {
+            "items": {
+              "$ref": "#/components/schemas/PalletResultContract"
+            },
+            "type": "array",
+            "title": "Pallets"
+          },
+          "unplacedCartons": {
+            "items": {
+              "$ref": "#/components/schemas/UnplacedCartonContract"
+            },
+            "type": "array",
+            "title": "Unplacedcartons"
+          },
+          "legacyExpectedResult": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LegacyExpectedResultContract"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "orderId",
+          "engineVersion",
+          "durationMs",
+          "warnings",
+          "totalCartonsCount",
+          "placedCartonsCount",
+          "unplacedCartonsCount",
+          "palletsCount",
+          "globalVolumeUsageRatio",
+          "totalWeightKg",
+          "pallets",
+          "unplacedCartons"
+        ],
+        "title": "PalletizeResponse"
+      },
+      "ParseCsvResponse": {
+        "properties": {
+          "contractVersion": {
+            "type": "string",
+            "title": "Contractversion",
+            "default": "1.0"
+          },
+          "orders": {
+            "items": {
+              "$ref": "#/components/schemas/ParsedCsvOrderContract"
+            },
+            "type": "array",
+            "title": "Orders"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/CsvImportErrorContract"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/CsvImportWarningContract"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "totalRows": {
+            "type": "integer",
+            "title": "Totalrows"
+          },
+          "acceptedRows": {
+            "type": "integer",
+            "title": "Acceptedrows"
+          },
+          "rejectedRows": {
+            "type": "integer",
+            "title": "Rejectedrows"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/CsvImportStatsContract"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "orders",
+          "errors",
+          "warnings",
+          "totalRows",
+          "acceptedRows",
+          "rejectedRows",
+          "stats"
+        ],
+        "title": "ParseCsvResponse"
+      },
+      "ParsedCsvOrderContract": {
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "title": "Orderid"
+          },
+          "shippingMode": {
+            "$ref": "#/components/schemas/ShippingMode"
+          },
+          "pallet": {
+            "$ref": "#/components/schemas/PalletContract"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/OrderLineContract"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "legacyPalletCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacypalletcount"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "orderId",
+          "shippingMode",
+          "pallet",
+          "lines"
+        ],
+        "title": "ParsedCsvOrderContract"
+      },
+      "PlacedCartonContract": {
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "title": "Instanceid"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "originalDimensionsMm": {
+            "$ref": "#/components/schemas/DimensionsContract"
+          },
+          "placedDimensionsMm": {
+            "$ref": "#/components/schemas/DimensionsContract"
+          },
+          "positionMm": {
+            "$ref": "#/components/schemas/Position3DContract"
+          },
+          "orientation": {
+            "$ref": "#/components/schemas/OrientationCode"
+          },
+          "palletIndex": {
+            "type": "integer",
+            "title": "Palletindex"
+          },
+          "placementScore": {
+            "type": "number",
+            "title": "Placementscore"
+          },
+          "weightKg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weightkg"
+          },
+          "fragile": {
+            "type": "boolean",
+            "title": "Fragile"
+          },
+          "stackable": {
+            "type": "boolean",
+            "title": "Stackable"
+          },
+          "productGroup": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Productgroup"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "instanceId",
+          "sku",
+          "originalDimensionsMm",
+          "placedDimensionsMm",
+          "positionMm",
+          "orientation",
+          "palletIndex",
+          "placementScore",
+          "fragile",
+          "stackable"
+        ],
+        "title": "PlacedCartonContract"
+      },
+      "Position3DContract": {
+        "properties": {
+          "x": {
+            "type": "number",
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "title": "Y"
+          },
+          "z": {
+            "type": "number",
+            "title": "Z"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "title": "Position3DContract"
+      },
+      "RejectionCode": {
+        "type": "string",
+        "enum": [
+          "DIMENSIONS_EXCEED_PALLET",
+          "HEIGHT_EXCEEDED",
+          "WEIGHT_EXCEEDED",
+          "ROTATION_FORBIDDEN",
+          "STACKING_CONSTRAINT",
+          "NO_STABLE_POSITION",
+          "INVALID_DATA",
+          "INCOMPATIBLE_GROUP"
+        ],
+        "title": "RejectionCode"
+      },
+      "ShippingMode": {
+        "type": "string",
+        "enum": [
+          "sea",
+          "air",
+          "road",
+          "unknown"
+        ],
+        "title": "ShippingMode"
+      },
+      "TransportLoadRequest": {
+        "properties": {
+          "contractVersion": {
+            "type": "string",
+            "title": "Contractversion",
+            "default": "1.0"
+          },
+          "pallets": {
+            "items": {
+              "$ref": "#/components/schemas/PalletToLoadContract"
+            },
+            "type": "array",
+            "title": "Pallets"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/VehicleContract"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pallets",
+          "vehicle"
+        ],
+        "title": "TransportLoadRequest"
+      },
+      "TransportLoadResponse": {
+        "properties": {
+          "contractVersion": {
+            "type": "string",
+            "title": "Contractversion",
+            "default": "1.0"
+          },
+          "vehicles": {
+            "items": {
+              "$ref": "#/components/schemas/VehicleLoadResultContract"
+            },
+            "type": "array",
+            "title": "Vehicles"
+          },
+          "unassignedPalletIndexes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Unassignedpalletindexes"
+          },
+          "vehiclesNeeded": {
+            "type": "integer",
+            "title": "Vehiclesneeded"
+          },
+          "palletsLoadable": {
+            "type": "integer",
+            "title": "Palletsloadable"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "vehicles",
+          "unassignedPalletIndexes",
+          "vehiclesNeeded",
+          "palletsLoadable"
+        ],
+        "title": "TransportLoadResponse"
+      },
+      "UnplacedCartonContract": {
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "title": "Instanceid"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "dimensionsMm": {
+            "$ref": "#/components/schemas/DimensionsContract"
+          },
+          "code": {
+            "$ref": "#/components/schemas/RejectionCode"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "weightKg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weightkg"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "instanceId",
+          "sku",
+          "dimensionsMm",
+          "code",
+          "message"
+        ],
+        "title": "UnplacedCartonContract"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VehicleContract": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "default": "vehicule"
+          },
+          "innerLengthMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Innerlengthmm"
+          },
+          "innerWidthMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Innerwidthmm"
+          },
+          "innerHeightMm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Innerheightmm"
+          },
+          "maxPayloadKg": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Maxpayloadkg"
+          },
+          "allowPalletRotationFloor": {
+            "type": "boolean",
+            "title": "Allowpalletrotationfloor",
+            "default": true
+          },
+          "allowPalletStacking": {
+            "type": "boolean",
+            "title": "Allowpalletstacking",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "innerLengthMm",
+          "innerWidthMm",
+          "innerHeightMm",
+          "maxPayloadKg"
+        ],
+        "title": "VehicleContract"
+      },
+      "VehicleLoadResultContract": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "placements": {
+            "items": {
+              "$ref": "#/components/schemas/LoadedPalletPlacementContract"
+            },
+            "type": "array",
+            "title": "Placements"
+          },
+          "usedFloorAreaRatio": {
+            "type": "number",
+            "title": "Usedfloorarearatio"
+          },
+          "usedWeightKg": {
+            "type": "number",
+            "title": "Usedweightkg"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "index",
+          "placements",
+          "usedFloorAreaRatio",
+          "usedWeightKg"
+        ],
+        "title": "VehicleLoadResultContract"
+      }
+    }
+  }
+}

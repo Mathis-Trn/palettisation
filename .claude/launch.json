@@ -3,9 +3,25 @@
   "configurations": [
     {
       "name": "palettisation3d",
-      "runtimeExecutable": "C:\\Users\\mathi\\AppData\\Roaming\\nvm\\v22.9.0\\node.exe",
-      "runtimeArgs": ["node_modules\\next\\dist\\bin\\next", "dev"],
+      "runtimeExecutable": "npm.cmd",
+      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
       "port": 3000
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "C:\\Users\\mathi\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\Scripts\\uv.exe",
+      "runtimeArgs": [
+        "--project",
+        "backend",
+        "run",
+        "uvicorn",
+        "palletizer.api.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "port": 8000
     }
   ]
 }

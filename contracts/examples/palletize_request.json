@@ -1,0 +1,39 @@
+{
+  "contractVersion": "1.0",
+  "order": {
+    "orderId": "SO265669-X82921",
+    "shippingMode": "sea",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "sku": "HANDSCRUB1",
+        "description": "Solution lavante exfoliante 350 ml / 12 fl oz",
+        "quantity": 20,
+        "unit": "PIECE",
+        "dimensionsMm": {
+          "length": 80,
+          "width": 80,
+          "height": 180
+        },
+        "weightKg": 0.88,
+        "allowRotation": true,
+        "uprightOnly": false,
+        "fragile": false,
+        "stackable": true
+      }
+    ]
+  },
+  "pallet": {
+    "code": "P:80x120x110",
+    "lengthMm": 800,
+    "widthMm": 1200,
+    "maxHeightMm": 1100,
+    "emptyPalletHeightMm": 144,
+    "maxHeightIncludesPallet": true,
+    "maxWeightKg": 1000
+  },
+  "options": {
+    "optimizationLevel": "fast",
+    "minimumSupportRatio": 0.8
+  }
+}

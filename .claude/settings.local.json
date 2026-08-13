@@ -14,7 +14,9 @@
       "PowerShell(nvm current)",
       "PowerShell(nvm list)",
       "PowerShell(& \"C:\\\\Users\\\\mathi\\\\AppData\\\\Roaming\\\\nvm\\\\nvm.exe\" use 22.9.0)",
-      "Bash(ls \"C:\\\\Users\\\\mathi\\\\AppData\\\\Roaming\\\\nvm\\\\v22.9.0\" | head -20)"
+      "Bash(ls \"C:\\\\Users\\\\mathi\\\\AppData\\\\Roaming\\\\nvm\\\\v22.9.0\" | head -20)",
+      "Bash(echo \"=== public ===\" && find public -maxdepth 2 2>/dev/null && echo \"=== .claude ===\" && find .claude -maxdepth 3 2>/dev/null && echo \"=== search wider for CSV with expected headers ===\" && find /c/Users/mathi -maxdepth 4 -iname \"*.csv\" 2>/dev/null | grep -v node_modules | head -50)",
+      "Bash(xxd)"
     ]
   }
 }
