@@ -33,7 +33,6 @@ export const DEMO_CARTON_LINES: CartonLine[] = [
     uprightOnly: true,
     fragile: true,
     stackable: true,
-    maxSupportedWeightKg: 2,
     productGroup: "verrerie",
     incompatibleGroups: ["chimie"],
   },
