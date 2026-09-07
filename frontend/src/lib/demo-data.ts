@@ -40,6 +40,8 @@ export const DEMO_CARTON_LINES: CartonLine[] = [
     uprightOnly: true,
     fragile: true,
     stackable: true,
+    productGroup: "verrerie",
+    incompatibleGroups: ["chimie"],
   },
   {
     sku: "PALETTE-SOCLE",
