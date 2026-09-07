@@ -7,8 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DeleteSimulationDialog } from "./delete-simulation-dialog";
 import { formatDateFr, formatInt, TRANSPORT_MODE_LABELS } from "@/lib/format";
-import { DEMO_CARTON_LINES, DEMO_SIMULATION_NAME } from "@/lib/demo-data";
-import { Boxes, Copy, FolderOpen, PackagePlus, Sparkles } from "lucide-react";
+import { DEMO_CARTON_LINES, DEMO_CARTON_LINES_LARGE, DEMO_SIMULATION_NAME, DEMO_SIMULATION_NAME_LARGE } from "@/lib/demo-data";
+import { Boxes, Copy, FolderOpen, PackagePlus, Ship, Sparkles } from "lucide-react";
 import { v4 as uuid } from "uuid";
 
 export function DashboardView() {
@@ -25,13 +25,21 @@ export function DashboardView() {
     router.push(`/simulation/${id}`);
   }
 
-  function handleLoadDemo() {
-    const id = createSimulation(DEMO_SIMULATION_NAME);
+  function loadDemo(name: string, lines: typeof DEMO_CARTON_LINES) {
+    const id = createSimulation(name);
     replaceCartonLines(
       id,
-      DEMO_CARTON_LINES.map((line) => ({ ...line, id: uuid() }))
+      lines.map((line) => ({ ...line, id: uuid() }))
     );
     router.push(`/simulation/${id}`);
+  }
+
+  function handleLoadDemo() {
+    loadDemo(DEMO_SIMULATION_NAME, DEMO_CARTON_LINES);
+  }
+
+  function handleLoadLargeDemo() {
+    loadDemo(DEMO_SIMULATION_NAME_LARGE, DEMO_CARTON_LINES_LARGE);
   }
 
   return (
@@ -43,10 +51,14 @@ export function DashboardView() {
             Portail de simulation de palettisation pour la préparation de vos commandes de transport routier, maritime ou aérien.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={handleLoadDemo}>
             <Sparkles className="h-4 w-4" />
             Démonstration
+          </Button>
+          <Button variant="secondary" onClick={handleLoadLargeDemo}>
+            <Ship className="h-4 w-4" />
+            Démonstration (grande commande)
           </Button>
           <Button onClick={handleNewSimulation}>
             <PackagePlus className="h-4 w-4" />
@@ -68,9 +80,12 @@ export function DashboardView() {
                 Aucune simulation pour le moment. Créez-en une nouvelle ou chargez le jeu de données de démonstration pour découvrir
                 l&apos;application.
               </p>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
                 <Button variant="secondary" onClick={handleLoadDemo}>
                   Charger la démonstration
+                </Button>
+                <Button variant="secondary" onClick={handleLoadLargeDemo}>
+                  Charger la grande commande
                 </Button>
                 <Button onClick={handleNewSimulation}>Nouvelle simulation</Button>
               </div>
