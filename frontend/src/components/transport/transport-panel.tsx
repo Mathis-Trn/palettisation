@@ -38,11 +38,13 @@ export function TransportPanel({ simulation }: { simulation: Simulation }) {
     if (name === CUSTOM_PRESET_VALUE) return;
     const preset = TRANSPORT_VEHICLE_PRESETS.find((p) => p.name === name);
     if (preset) setVehicle((v) => ({ ...v, ...preset, name: preset.name }));
+    setResult(null);
   }
 
   function patchVehicle(patch: Partial<VehicleConfig>) {
     setPresetName(CUSTOM_PRESET_VALUE);
     setVehicle((v) => ({ ...v, ...patch }));
+    setResult(null);
   }
 
   async function handleCompute() {
