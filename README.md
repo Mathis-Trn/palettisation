@@ -1,4 +1,4 @@
-# Palettisation 3D
+# Palettisation 3D - Groupe Melandry MARCHAND, Mathis TERNON, Cécile Valente, Joseph MAUJEAN 
 
 Portail web de simulation de palettisation 3D : import ou saisie d'une commande de cartons,
 calcul automatique de la répartition sur des palettes (transport routier, maritime ou aérien),
